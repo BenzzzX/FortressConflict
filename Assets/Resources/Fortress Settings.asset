@@ -23,3 +23,5 @@ MonoBehaviour:
     subMesh: 0
     castShadows: 1
     receiveShadows: 1
+  lineRenderer: {fileID: 1930644738535572, guid: 30fd759a023ade24199e7f1ecc567382,
+    type: 2}

@@ -9,6 +9,7 @@ public enum PathRequestStatus
     InQueue,
     InProgress,
     Done,
+    Failure,
     Idle,
 }
 
@@ -22,6 +23,8 @@ public struct PathRequestData : IComponentData
 
     public int pathSize;
     public PathRequestStatus status;
+
+
 }
 
 public class PathRequestDataComponent : ComponentDataWrapper<PathRequestData>

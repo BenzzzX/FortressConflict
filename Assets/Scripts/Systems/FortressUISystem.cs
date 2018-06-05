@@ -6,7 +6,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using UnityEngine.Experimental.PlayerLoop;
 
-[UpdateAfter(typeof(PostLateUpdate))]
+[UpdateAfter(typeof(PathFindSystem))]
 public class FortressUISystem : JobComponentSystem
 {
     public struct Fortresses
@@ -38,8 +38,6 @@ public class FortressUISystem : JobComponentSystem
 
     private FortressUIDrawer drawer;
 
-    public NativeArray<int> downs;
-
     protected override void OnCreateManager(int capacity)
     {
         base.OnCreateManager(capacity);
@@ -54,14 +52,11 @@ public class FortressUISystem : JobComponentSystem
         if (drawer == null) return inDeps;
         int length = fortresses.Length;
 
-        NativeArrayExtensions.ResizeNativeArray(ref downs, length);
-
         return inDeps;
     }
 
     protected override void OnDestroyManager()
     {
-        if (downs.IsCreated) downs.Dispose();
         base.OnDestroyManager();
     }
 }

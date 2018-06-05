@@ -30,7 +30,7 @@ GameObject:
   - component: {fileID: 114853595571491884}
   - component: {fileID: 114884590072919710}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Fortress
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

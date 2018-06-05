@@ -10,6 +10,9 @@ public class FortressSettings : ScriptableObject {
     [SerializeField]
     public MeshInstanceRenderer selectedRenderer;
 
+    [SerializeField]
+    public GameObject lineRenderer;
+
     private static FortressSettings instance;
 
     public static FortressSettings Instance
