@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fortress Conflict", "Assembly-CSharp.csproj", "{3FD3DF0F-A23B-FE3A-D800-DABEEA6291DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fortress Conflict", "Assembly-CSharp-Editor.csproj", "{C2491BE0-8DC0-FCF9-67B8-97A61BBE19C5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3FD3DF0F-A23B-FE3A-D800-DABEEA6291DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FD3DF0F-A23B-FE3A-D800-DABEEA6291DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FD3DF0F-A23B-FE3A-D800-DABEEA6291DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FD3DF0F-A23B-FE3A-D800-DABEEA6291DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2491BE0-8DC0-FCF9-67B8-97A61BBE19C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2491BE0-8DC0-FCF9-67B8-97A61BBE19C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2491BE0-8DC0-FCF9-67B8-97A61BBE19C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2491BE0-8DC0-FCF9-67B8-97A61BBE19C5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
