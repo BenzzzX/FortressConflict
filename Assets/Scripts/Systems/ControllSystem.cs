@@ -12,7 +12,7 @@ public class ControllSystem : ComponentSystem {
     public struct Fortresses
     {
         [ReadOnly]
-        public ComponentDataArray<FortressData> fortresses;
+        public ComponentDataArray<FortressData> fortressDatas;
         [ReadOnly]
         public ComponentDataArray<OwnerData> captured;
         [ReadOnly]
@@ -38,7 +38,7 @@ public class ControllSystem : ComponentSystem {
 
     [Inject]
     [ReadOnly]
-    FixedArrayFromEntity<PathData> paths;
+    FixedArrayFromEntity<PathPoint> paths;
 
     [Inject]
     [ReadOnly]
@@ -47,7 +47,7 @@ public class ControllSystem : ComponentSystem {
     NativeList<Entity> selected;
     Entity target;
 
-    public const float maxOffset = 1.1f;
+    public const float maxOffset = 2f;
 
     protected override void OnCreateManager(int capacity)
     {
@@ -70,9 +70,9 @@ public class ControllSystem : ComponentSystem {
             while (i < selected.Length && owner.alliance != 0)
                 selected.RemoveAtSwapBack(i);
         }
-
+        
         //按下左键, 选择中
-        if (Input.GetMouseButton(0) && fortresses.Length > 0)
+        if (Input.GetMouseButtonUp(0) && fortresses.Length > 0)
         {
             var mousePos = Input.mousePosition;
             var cam = Camera.main;
@@ -106,98 +106,109 @@ public class ControllSystem : ComponentSystem {
             {
                 var entity = fortresses.entities[closestIndex];
                 var owner = EntityManager.GetComponentData<OwnerData>(entity);
-                if (selected.Length == 0 && owner.alliance == 0) //第一个直接选中
-                {
-                    selected.Add(entity);
-                    FortressSettings setting = FortressSettings.Instance;
-                    EntityManager.SetSharedComponentData(entity, setting.selectedRenderer);
-                }
-                else if (selected.Length == 1 && entity == selected[0]) { }
-                else if (target != entity) //新的目标
-                {
-                    if (selected.Length > 1) //两个或以上可以取消选择作为目标
-                    {
-                        var index = selected.IndexOf(entity);
-                        if (index >= 0) //如果已经选中了,需要取消
-                        {
-                            selected.RemoveAtSwapBack(index);
-                            FortressSettings setting = FortressSettings.Instance;
-                            PostUpdateCommands.SetSharedComponent(entity, setting.baseRenderer);
-                        }
-                    }
 
-                    target = entity;
-
+                if (selected.Length > 0 && target == entity)
+                {
                     for (var i = 0; i < selected.Length; ++i)
                     {
+                        PostUpdateCommands.CreateEntity();
+                        var data = new FortressMarchData();
+                        data.entity = selected[i];
+                        data.targetEntity = target;
+                        data.withTroops = fortressData[selected[i]].troops / 2;
+                        PostUpdateCommands.AddComponent(data);
+                    }
+
+
+                    //取消所有选中
+                    for (var i = 0; i < selected.Length; ++i)
+                    {
+
                         var request = pathRequests[selected[i]];
-                        request.status = PathRequestStatus.NewRequest;
-                        request.start = positions[selected[i]].Value;
-                        request.end = positions[target].Value;
-                        request.mask = NavMesh.AllAreas;
+                        request.status = PathRequestStatus.Idle;
                         pathRequests[selected[i]] = request;
+
+                        FortressSettings setting = FortressSettings.Instance;
+                        PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
+                    }
+
+                    selected.Clear();
+                    target = new Entity();
+                }
+                else
+                {
+
+                    if (target != new Entity()) //如果没有确认为目标,则选中
+                    {
+                        for (var i = 0; i < selected.Length; ++i)
+                        {
+                            var request = pathRequests[selected[i]];
+                            request.status = PathRequestStatus.Idle;
+                            pathRequests[selected[i]] = request;
+                        }
+
+                        var targetOwner = EntityManager.GetComponentData<OwnerData>(target);
+                        if (targetOwner.alliance == 0)
+                            if (!selected.Contains(target))
+                            {
+                                selected.Add(target);
+                                FortressSettings setting = FortressSettings.Instance;
+                                PostUpdateCommands.SetSharedComponent(target, setting.selectedRenderer);
+                            }
+                        target = new Entity();
+                    }
+                    if (selected.Length == 0 && owner.alliance == 0) //第一个直接选中
+                    {
+                        selected.Add(entity);
+                        FortressSettings setting = FortressSettings.Instance;
+                        EntityManager.SetSharedComponentData(entity, setting.selectedRenderer);
+                    }
+                    else if (selected.Length == 1 && entity == selected[0]) { }
+                    else if (target != entity) //新的目标
+                    {
+                        if (selected.Length > 1) //两个或以上可以取消选择作为目标
+                        {
+                            var index = selected.IndexOf(entity);
+                            if (index >= 0) //如果已经选中了,需要取消
+                            {
+                                selected.RemoveAtSwapBack(index);
+                                FortressSettings setting = FortressSettings.Instance;
+                                PostUpdateCommands.SetSharedComponent(entity, setting.baseRenderer);
+                            }
+                        }
+
+                        target = entity;
+
+                        for (var i = 0; i < selected.Length; ++i)
+                        {
+                            var request = pathRequests[selected[i]];
+                            request.status = PathRequestStatus.NewRequest;
+                            request.start = positions[selected[i]].Value;
+                            request.end = positions[target].Value;
+                            request.mask = NavMesh.AllAreas;
+                            pathRequests[selected[i]] = request;
+                        }
                     }
                 }
             }
             else
             {
-                if (target != new Entity()) //如果没有确认为目标,则选中
-                {
-                    for (var i = 0; i < selected.Length; ++i)
-                    {
-                        var request = pathRequests[selected[i]];
-                        request.status = PathRequestStatus.Idle;
-                        pathRequests[selected[i]] = request;
-                    }
-
-                    var owner = EntityManager.GetComponentData<OwnerData>(target);
-                    if (owner.alliance == 0)
-                        if (!selected.Contains(target))
-                        {
-                            selected.Add(target);
-                            FortressSettings setting = FortressSettings.Instance;
-                            PostUpdateCommands.SetSharedComponent(target, setting.selectedRenderer);
-                        }
-                    target = new Entity();
-                }
-            }
-        }
-        else //松开左键,执行动作
-        {
-            if (selected.Length > 0 && target != new Entity())
-            {
+                //取消所有选中
                 for (var i = 0; i < selected.Length; ++i)
                 {
-                    PostUpdateCommands.CreateEntity();
-                    var data = new FortressMarchData();
-                    data.entity = selected[i];
-                    data.targetEntity = target;
-                    data.withTroops = fortressData[selected[i]].troops / 2;
-                    PostUpdateCommands.AddComponent(data);
+
+                    var request = pathRequests[selected[i]];
+                    request.status = PathRequestStatus.Idle;
+                    pathRequests[selected[i]] = request;
+
+                    FortressSettings setting = FortressSettings.Instance;
+                    PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
                 }
+
+                selected.Clear();
+                target = new Entity();
+
             }
-
-            //取消所有选中
-            for (var i = 0; i < selected.Length; ++i) 
-            {
-                
-                var request = pathRequests[selected[i]];
-                request.status = PathRequestStatus.Idle;
-                pathRequests[selected[i]] = request;
-
-                FortressSettings setting = FortressSettings.Instance;
-                PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
-            }
-
-            selected.Clear();
-            target = new Entity();
-        }
-        
-        for (var i = 0; i < selected.Length; ++i)
-        {
-            var pathType = ComponentType.FixedArray(typeof(PathData), SimulationState.MaxPathSize);
-            if (!EntityManager.HasComponent(selected[i], pathType))
-                EntityManager.AddComponent(selected[i], pathType);
         }
     }
 }

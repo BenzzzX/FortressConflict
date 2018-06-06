@@ -3,6 +3,10 @@ using Unity.Mathematics;
 
 using UnityEngine.Experimental.AI;
 
+using System.Runtime.InteropServices;
+
+
+
 public enum PathRequestStatus
 {
     NewRequest,
@@ -23,11 +27,10 @@ public struct PathRequestData : IComponentData
 
     public int pathSize;
     public PathRequestStatus status;
-
-
 }
 
 public class PathRequestDataComponent : ComponentDataWrapper<PathRequestData>
 {
 
 }
+

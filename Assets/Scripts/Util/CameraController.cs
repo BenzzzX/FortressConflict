@@ -19,6 +19,7 @@ public class CameraController : MonoBehaviour {
     private void OnMoveInput()
     {
         var pos = transform.position;
+        if (!Screen.safeArea.Contains(Input.mousePosition)) return;
 
         var zoomDelta = Input.GetAxis("Zoom") * Time.deltaTime * zoomSpeed;
         var preZoom = zoom;
@@ -30,12 +31,16 @@ public class CameraController : MonoBehaviour {
         var offset = panSpeed * Time.deltaTime * (zoom / 15f);
 
         var deltaX = Input.GetAxis("MoveRight");
-        if (Input.mousePosition.x >= Screen.width - panBorder && Input.mousePosition.x < Screen.width) deltaX = 1;
-        else if (Input.mousePosition.x <= panBorder && Input.mousePosition.x > 0) deltaX = -1;
+        if (Input.mousePosition.x >= Screen.width - panBorder )
+            deltaX = 1;
+        else if (Input.mousePosition.x <= panBorder )
+            deltaX = -1;
 
         var deltaZ = Input.GetAxis("MoveForward");
-        if (Input.mousePosition.y >= Screen.height - panBorder && Input.mousePosition.y < Screen.height) deltaZ = 1;
-        else if (Input.mousePosition.y <= panBorder && Input.mousePosition.y > 0) deltaZ = -1;
+        if (Input.mousePosition.y >= Screen.height - panBorder)
+            deltaZ = 1;
+        else if (Input.mousePosition.y <= panBorder)
+            deltaZ = -1;
 
         pos.z += deltaZ * offset;
         pos.x += deltaX * offset;

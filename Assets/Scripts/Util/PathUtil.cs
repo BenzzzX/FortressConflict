@@ -132,6 +132,7 @@ public class PathUtils
         straightPath[0] = query.CreateLocation(startPos, path[0]);
 
         straightPathFlags[0] = StraightPathFlags.Start;
+        vertexSide[0] = 0;
 
         var apexIndex = 0;
         var n = 1;

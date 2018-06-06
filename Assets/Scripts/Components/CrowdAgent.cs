@@ -4,15 +4,11 @@ using UnityEngine.Experimental.AI;
 
 public struct CrowdAgent : IComponentData
 {
-    public float3 destination;
-    public int pathSize;
+    public int pathId;
+
     public float speed;
 
-    // 1    - right
-    // 0    - strait
-    // -1   - left
-    public float nextCornerSide;
-    public float3 steeringTarget;
+    public PathPoint steerTarget; 
 
     // bit 0    - newDestinationRequested
     // bit 1    - goToDestination
