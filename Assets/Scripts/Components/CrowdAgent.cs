@@ -8,7 +8,13 @@ public struct CrowdAgent : IComponentData
 
     public float speed;
 
-    public PathPoint steerTarget; 
+    public float rotateSpeed;
+
+    public PathPoint fromPoint;
+
+    public PathPoint steerTarget;
+
+    public NavMeshLocation location;
 
     // bit 0    - newDestinationRequested
     // bit 1    - goToDestination

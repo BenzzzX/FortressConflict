@@ -111,12 +111,7 @@ public class ControllSystem : ComponentSystem {
                 {
                     for (var i = 0; i < selected.Length; ++i)
                     {
-                        PostUpdateCommands.CreateEntity();
-                        var data = new FortressMarchData();
-                        data.entity = selected[i];
-                        data.targetEntity = target;
-                        data.withTroops = fortressData[selected[i]].troops / 2;
-                        PostUpdateCommands.AddComponent(data);
+                        //@TODO: Start march
                     }
 
 

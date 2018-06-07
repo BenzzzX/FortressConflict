@@ -35,7 +35,7 @@ public class PathFindSystem : JobComponentSystem
         public NativeArray<State> state;
 
         public const int MAX_COUNT = 10;
-        public const int MAX_PATHSIZE = 20;
+        public const int MAX_PATHSIZE = SimulationState.MaxPathSize;
         public RequestBatch(int nodePoolSize = 2000)
         {
             var world = NavMeshWorld.GetDefaultWorld();

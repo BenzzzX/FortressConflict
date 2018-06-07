@@ -1,18 +1,16 @@
 ﻿using Unity.Mathematics;
 using Unity.Entities;
+using Unity.Transforms;
 
 [System.Serializable]
 public struct FormationData : IComponentData
 {
     public int troops;
-    public float3 position;
-    public float3 forward;
 
     public int width;
     public int unitCount;
 
-    // bit 0    - isAttacking
-    private int bitfield;
+    public float sideOffset;
 
     public bool isAttacking
     {
@@ -20,6 +18,27 @@ public struct FormationData : IComponentData
         set { SetBit(0, value); }
     }
 
+    public bool isMarching
+    {
+        get { return IsBit(1); }
+        set { SetBit(1, value); }
+    }
+
+    public float3 GetUnitSteerTarget(Position position, Heading heading, int unitId)
+    {
+        float3 sideVector = heading.Value.zyx;
+        sideVector.x = -sideVector.x;
+
+        // required to hit the corners correctly
+        var side = sideVector * width * sideOffset * 0.5f;
+
+        var height = math.ceil((float)unitCount / width);
+        return position.Value + sideVector * ((unitId % width) - (width * 0.5f)) + side +
+                            heading.Value * (unitId / width - (height * 0.5f));
+    }
+
+    // bit 0    - isAttacking
+    private int bitfield;
 
     private bool IsBit(int bit)
     {
