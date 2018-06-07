@@ -21,7 +21,6 @@ GameObject:
   - component: {fileID: 4018839309053982}
   - component: {fileID: 114906779370190528}
   - component: {fileID: 114681487066672776}
-  - component: {fileID: 114369653544950016}
   - component: {fileID: 114127461126744982}
   - component: {fileID: 114771872993428300}
   - component: {fileID: 114212326513247064}
@@ -29,6 +28,8 @@ GameObject:
   - component: {fileID: 114752820474338034}
   - component: {fileID: 114853595571491884}
   - component: {fileID: 114884590072919710}
+  - component: {fileID: 114423123518654340}
+  - component: {fileID: 114897945019957960}
   m_Layer: 0
   m_Name: Fortress
   m_TagString: Untagged
@@ -79,7 +80,7 @@ MonoBehaviour:
   m_SerializedData:
     troops: 0
     maxTroops: 10
---- !u!114 &114369653544950016
+--- !u!114 &114423123518654340
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -87,14 +88,130 @@ MonoBehaviour:
   m_GameObject: {fileID: 1503277307230914}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 206d9b88d9fd4c4c9e5a1a976224e421, type: 3}
+  m_Script: {fileID: 11500000, guid: ba6986eb7d3ad5a429c6f25344021926, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SerializedData:
-    Value:
+  array:
+  - position:
       x: 0
       y: 0
       z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
+  - position:
+      x: 0
+      y: 0
+      z: 0
+    vertexSide: 0
+    flag: 0
 --- !u!114 &114584061714151608
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -189,6 +306,17 @@ MonoBehaviour:
     mask: -1
     pathSize: 0
     status: 4
+--- !u!114 &114897945019957960
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1503277307230914}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 741267dcb5232ee46bd3c08139a37c18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114906779370190528
 MonoBehaviour:
   m_ObjectHideFlags: 1

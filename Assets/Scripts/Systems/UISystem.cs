@@ -37,6 +37,7 @@ public class UISystem : JobComponentSystem
         public ComponentDataArray<Position> positions;
         [ReadOnly]
         public ComponentDataArray<Heading> headings;
+
         public int Length;
     }
 
@@ -48,20 +49,14 @@ public class UISystem : JobComponentSystem
     [Inject]
     public Formations formations;
 
-    public ComponentPool<LineRenderer> lineRenderers;
-
     [Inject]
     public Pathfinders pathfinders;
 
-    private FortressUIRenderer fortressUI;
-    private FormationUIRenderer formationUI;
+    public ComponentPool<LineRenderer> lineRenderers;
 
     protected override void OnCreateManager(int capacity)
     {
         base.OnCreateManager(capacity);
-        var obj = new GameObject("UIDrawer");
-        fortressUI = obj.AddComponent<FortressUIRenderer>();
-        formationUI = obj.AddComponent<FormationUIRenderer>();
 
         lineRenderers = new ComponentPool<LineRenderer>();
         lineRenderers.prefab = FortressSettings.Instance.lineRenderer;
@@ -70,56 +65,8 @@ public class UISystem : JobComponentSystem
     // Update is called once per frame
     protected override JobHandle OnUpdate(JobHandle inDeps)
     {
-        NativeArrayExtensions.ResizeNativeArray(ref fortressUI.fortressDatas, fortresses.Length);
-        NativeArrayExtensions.ResizeNativeArray(ref fortressUI.positions, fortresses.Length);
-        NativeArrayExtensions.ResizeNativeArray(ref formationUI.formationDatas, formations.Length);
-        NativeArrayExtensions.ResizeNativeArray(ref formationUI.positions, formations.Length);
-        NativeArrayExtensions.ResizeNativeArray(ref formationUI.headings, formations.Length);
+
         inDeps.Complete();
-
-        var fences = new NativeArray<JobHandle>(5, Allocator.Temp);
-
-        var copyFortressDataJob = new CopyComponentData<FortressData>
-        {
-            Source = fortresses.fortressDatas,
-            Results = fortressUI.fortressDatas
-        };
-
-        fences[0] = copyFortressDataJob.Schedule(fortresses.Length, SimulationState.TinyBatchSize);
-
-        var copyFortressPositionJob = new CopyComponentData<Position>
-        {
-            Source = fortresses.positions,
-            Results = fortressUI.positions
-        };
-
-        fences[1] = copyFortressPositionJob.Schedule(fortresses.Length, SimulationState.TinyBatchSize);
-
-        var copyFormationDataJob = new CopyComponentData<FormationData>
-        {
-            Source = formations.formationDatas,
-            Results = formationUI.formationDatas
-        };
-
-        fences[2] = copyFormationDataJob.Schedule(fortresses.Length, SimulationState.TinyBatchSize);
-
-        var copyFormationPositionJob = new CopyComponentData<Position>
-        {
-            Source = formations.positions,
-            Results = formationUI.positions
-        };
-
-        fences[3] = copyFormationPositionJob.Schedule(fortresses.Length, SimulationState.TinyBatchSize);
-
-        var copyFormationHeadingJob = new CopyComponentData<Heading>
-        {
-            Source = formations.headings,
-            Results = formationUI.headings
-        };
-
-        fences[4] = copyFormationHeadingJob.Schedule(fortresses.Length, SimulationState.TinyBatchSize);
-
-        fortressUI.length = fortresses.Length;
 
         var paths = pathfinders.paths;
         var pathRequests = pathfinders.pathRequests;
@@ -141,20 +88,21 @@ public class UISystem : JobComponentSystem
 
         lineRenderers.Present();
 
-        var fence = JobHandle.CombineDependencies(fences);
-        fences.Dispose();
-        return fence;
+        for (var i = 0; i < formations.Length; ++i)
+        {
+            var formationData = formations.formationDatas[i];
+            var position = formations.positions[i];
+            var heading = formations.headings[i];
+            for (int j = 0; j < formationData.unitCount; j++)
+            {
+                Debug.DrawLine(position.Value, position.Value + formationData.GetUnitSteerTarget(position, heading, j), Color.yellow, Time.deltaTime * 2);
+            }
+        }
+
+        return new JobHandle();
     }
 
     protected override void OnDestroyManager()
     {
-        base.OnDestroyManager();
-
-        fortressUI.fortressDatas.Dispose();
-        fortressUI.positions.Dispose();
-
-        formationUI.formationDatas.Dispose();
-        formationUI.positions.Dispose();
-        formationUI.headings.Dispose();
     }
 }

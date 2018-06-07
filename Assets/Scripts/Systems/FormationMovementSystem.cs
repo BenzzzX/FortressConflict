@@ -14,11 +14,11 @@ public class FormationMovementSystem : JobComponentSystem
         public ComponentDataArray<FormationData> formationDatas;
         public ComponentDataArray<Position> positions;
         public ComponentDataArray<Heading> headings;
-        public ComponentDataArray<CrowdAgent> agents;
+        public ComponentDataArray<CrowdAgentData> agents;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
 
-        public int length;
+        public int Length;
     }
 
     [Inject]
@@ -26,11 +26,12 @@ public class FormationMovementSystem : JobComponentSystem
 
     struct FollowPath : IJobParallelFor
     {
+        [ReadOnly]
         public NavMeshQuery query;
         public ComponentDataArray<FormationData> formationDatas;
         public ComponentDataArray<Position> positions;
         public ComponentDataArray<Heading> headings;
-        public ComponentDataArray<CrowdAgent> agents;
+        public ComponentDataArray<CrowdAgentData> agents;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
         float dt;
@@ -39,7 +40,7 @@ public class FormationMovementSystem : JobComponentSystem
         {
             var formationData = formationDatas[index];
             var agent = agents[index];
-            if (!formationData.isAttacking && !agent.destinationReached && !agent.waitingUnit && agent.goToDestination)
+            if (!formationData.isAttacking && agent.state == CrowdState.moving)
             {
                 var position = positions[index];
                 var heading = headings[index];
@@ -50,7 +51,7 @@ public class FormationMovementSystem : JobComponentSystem
                 {
                     if(agent.steerTarget.flag == StraightPathFlags.End)
                     {
-                        agent.destinationReached = true;
+                        agent.state |= CrowdState.reached;
                         return;
                     }
                     var path = paths[index];
@@ -121,6 +122,6 @@ public class FormationMovementSystem : JobComponentSystem
             query = query
         };
 
-        return moveJob.Schedule(formations.length, SimulationState.SmallBatchSize, inputDeps);
+        return moveJob.Schedule(formations.Length, SimulationState.SmallBatchSize, inputDeps);
     }
 }

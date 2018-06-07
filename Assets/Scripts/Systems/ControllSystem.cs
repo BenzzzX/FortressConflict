@@ -17,8 +17,8 @@ public class ControllSystem : ComponentSystem {
         public ComponentDataArray<OwnerData> captured;
         [ReadOnly]
         public ComponentDataArray<Position> positions;
-        [ReadOnly]
-        public ComponentDataArray<PathRequestData> pathRequests;
+
+        public ComponentDataArray<DispatchData> marchDatas;
 
         public EntityArray entities;
 
@@ -58,6 +58,24 @@ public class ControllSystem : ComponentSystem {
     protected override void OnDestroyManager()
     {
         selected.Dispose();
+    }
+
+    void FinishSelection()
+    {
+        //取消所有选中
+        for (var i = 0; i < selected.Length; ++i)
+        {
+
+            var request = pathRequests[selected[i]];
+            request.status = PathRequestStatus.Idle;
+            pathRequests[selected[i]] = request;
+
+            FortressSettings setting = FortressSettings.Instance;
+            PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
+        }
+
+        selected.Clear();
+        target = new Entity();
     }
 
     protected override void OnUpdate()
@@ -112,36 +130,38 @@ public class ControllSystem : ComponentSystem {
                     for (var i = 0; i < selected.Length; ++i)
                     {
                         //@TODO: Start march
+                        DispatchData march = EntityManager.GetComponentData<DispatchData>(selected[i]);
+                        FortressData fortressData = EntityManager.GetComponentData<FortressData>(selected[i]);
+                        if(march.target == target)
+                        {
+                            march.troops += (fortressData.troops - march.troops) / 2;
+                        }
+                        else
+                        {
+                            march.target = target;
+                            march.troops = fortressData.troops / 2;
+                        }
+                        EntityManager.SetComponentData(selected[i], march);
                     }
 
+                    FinishSelection();
 
-                    //取消所有选中
-                    for (var i = 0; i < selected.Length; ++i)
-                    {
 
-                        var request = pathRequests[selected[i]];
-                        request.status = PathRequestStatus.Idle;
-                        pathRequests[selected[i]] = request;
+                }
+                else if(selected.Length == 1 && entity == selected[0])
+                {
+                    //@TODO: Stop march
+                    DispatchData march = EntityManager.GetComponentData<DispatchData>(entity);
+                    march.troops = 0;
+                    EntityManager.SetComponentData(entity, march);
 
-                        FortressSettings setting = FortressSettings.Instance;
-                        PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
-                    }
-
-                    selected.Clear();
-                    target = new Entity();
+                    FinishSelection();
                 }
                 else
                 {
 
                     if (target != new Entity()) //如果没有确认为目标,则选中
                     {
-                        for (var i = 0; i < selected.Length; ++i)
-                        {
-                            var request = pathRequests[selected[i]];
-                            request.status = PathRequestStatus.Idle;
-                            pathRequests[selected[i]] = request;
-                        }
-
                         var targetOwner = EntityManager.GetComponentData<OwnerData>(target);
                         if (targetOwner.alliance == 0)
                             if (!selected.Contains(target))
@@ -152,13 +172,13 @@ public class ControllSystem : ComponentSystem {
                             }
                         target = new Entity();
                     }
+
                     if (selected.Length == 0 && owner.alliance == 0) //第一个直接选中
                     {
                         selected.Add(entity);
                         FortressSettings setting = FortressSettings.Instance;
                         EntityManager.SetSharedComponentData(entity, setting.selectedRenderer);
                     }
-                    else if (selected.Length == 1 && entity == selected[0]) { }
                     else if (target != entity) //新的目标
                     {
                         if (selected.Length > 1) //两个或以上可以取消选择作为目标
@@ -166,9 +186,12 @@ public class ControllSystem : ComponentSystem {
                             var index = selected.IndexOf(entity);
                             if (index >= 0) //如果已经选中了,需要取消
                             {
-                                selected.RemoveAtSwapBack(index);
+                                var request = pathRequests[entity];
+                                request.status = PathRequestStatus.Idle;
+                                pathRequests[entity] = request;
                                 FortressSettings setting = FortressSettings.Instance;
                                 PostUpdateCommands.SetSharedComponent(entity, setting.baseRenderer);
+                                selected.RemoveAtSwapBack(index);
                             }
                         }
 
@@ -188,21 +211,7 @@ public class ControllSystem : ComponentSystem {
             }
             else
             {
-                //取消所有选中
-                for (var i = 0; i < selected.Length; ++i)
-                {
-
-                    var request = pathRequests[selected[i]];
-                    request.status = PathRequestStatus.Idle;
-                    pathRequests[selected[i]] = request;
-
-                    FortressSettings setting = FortressSettings.Instance;
-                    PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
-                }
-
-                selected.Clear();
-                target = new Entity();
-
+                FinishSelection();
             }
         }
     }

@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Transforms;
 
+//@TODO: find anothor way to render UI
 public class FortressUIRenderer : MonoBehaviour
 {
     public GUIStyle style;
