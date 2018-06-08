@@ -11,7 +11,7 @@ public class FortressTroopsSystem : JobComponentSystem
         public ComponentDataArray<FortressData> fortresses;
         [ReadOnly]
         public ComponentDataArray<OwnerData> captured;
-        public ComponentDataArray<FortressSpawnData> spawners;
+        public ComponentDataArray<SpawnData> spawners;
 
         public int Length;
     }
@@ -19,7 +19,7 @@ public class FortressTroopsSystem : JobComponentSystem
     public struct Overloading
     {
         public ComponentDataArray<FortressData> fortresses;
-        public ComponentDataArray<FortressOverloadData> overloads;
+        public ComponentDataArray<OverloadData> overloads;
 
         public int Length;
     }
@@ -56,7 +56,7 @@ public class FortressTroopsSystem : JobComponentSystem
 public struct SpawnJob : IJobParallelFor
 {
     public ComponentDataArray<FortressData> fortresses;
-    public ComponentDataArray<FortressSpawnData> spawners;
+    public ComponentDataArray<SpawnData> spawners;
 
     [ReadOnly]
     public float dt;
@@ -81,7 +81,7 @@ public struct SpawnJob : IJobParallelFor
 public struct OverloadJob : IJobParallelFor
 {
     public ComponentDataArray<FortressData> fortresses;
-    public ComponentDataArray<FortressOverloadData> overloads;
+    public ComponentDataArray<OverloadData> overloads;
 
     [ReadOnly]
     public float dt;

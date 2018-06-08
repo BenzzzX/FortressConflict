@@ -52,54 +52,26 @@ public class UISystem : JobComponentSystem
     [Inject]
     public Pathfinders pathfinders;
 
-    public ComponentPool<LineRenderer> lineRenderers;
-
     protected override void OnCreateManager(int capacity)
     {
         base.OnCreateManager(capacity);
-
-        lineRenderers = new ComponentPool<LineRenderer>();
-        lineRenderers.prefab = FortressSettings.Instance.lineRenderer;
     }
 
     // Update is called once per frame
     protected override JobHandle OnUpdate(JobHandle inDeps)
     {
-
-        inDeps.Complete();
-
-        var paths = pathfinders.paths;
-        var pathRequests = pathfinders.pathRequests;
-        var length = pathfinders.Length;
-        for (var i = 0; i < length; ++i)
-        {
-            var request = pathRequests[i];
-            if (request.status == PathRequestStatus.Done)
-            {
-                var path = paths[i];
-                var renderer = lineRenderers.New();
-                var points = new Vector3[request.pathSize];
-                for (var j = 0; j < request.pathSize; ++j)
-                    points[j] = path[j].position;
-                renderer.positionCount = request.pathSize;
-                renderer.SetPositions(points);
-            }
-        }
-
-        lineRenderers.Present();
-
         for (var i = 0; i < formations.Length; ++i)
         {
             var formationData = formations.formationDatas[i];
             var position = formations.positions[i];
             var heading = formations.headings[i];
-            for (int j = 0; j < formationData.unitCount; j++)
+            for (int j = 0; j < formationData.troops; j++)
             {
-                Debug.DrawLine(position.Value, position.Value + formationData.GetUnitSteerTarget(position, heading, j), Color.yellow, Time.deltaTime * 2);
+                Debug.DrawLine(position.Value, formationData.GetUnitSteerTarget(position, heading, j), Color.yellow, Time.deltaTime * 2);
             }
         }
 
-        return new JobHandle();
+        return inDeps;
     }
 
     protected override void OnDestroyManager()

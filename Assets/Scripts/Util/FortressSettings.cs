@@ -1,7 +1,6 @@
 ﻿using Unity.Rendering;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Fortress/Create FortressSettings")]
 public class FortressSettings : ScriptableObject {
 
     [SerializeField]
@@ -12,6 +11,12 @@ public class FortressSettings : ScriptableObject {
 
     [SerializeField]
     public GameObject lineRenderer;
+
+    [SerializeField]
+    public GameObject formationPrefab;
+
+    [SerializeField]
+    public int formationTroops = 250;
 
     private static FortressSettings instance;
 

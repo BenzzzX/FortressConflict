@@ -47,12 +47,17 @@ public class ControllSystem : ComponentSystem {
     NativeList<Entity> selected;
     Entity target;
 
+    ComponentPool<LineRenderer> lineRenderers;
+
     public const float maxOffset = 2f;
 
     protected override void OnCreateManager(int capacity)
     {
         selected = new NativeList<Entity>(Allocator.Persistent);
         target = new Entity();
+
+        lineRenderers = new ComponentPool<LineRenderer>();
+        lineRenderers.prefab = FortressSettings.Instance.lineRenderer;
     }
 
     protected override void OnDestroyManager()
@@ -65,11 +70,6 @@ public class ControllSystem : ComponentSystem {
         //取消所有选中
         for (var i = 0; i < selected.Length; ++i)
         {
-
-            var request = pathRequests[selected[i]];
-            request.status = PathRequestStatus.Idle;
-            pathRequests[selected[i]] = request;
-
             FortressSettings setting = FortressSettings.Instance;
             PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
         }
@@ -88,7 +88,24 @@ public class ControllSystem : ComponentSystem {
             while (i < selected.Length && owner.alliance != 0)
                 selected.RemoveAtSwapBack(i);
         }
-        
+
+        for (var i = 0; i < selected.Length; ++i)
+        {
+            var request = pathRequests[selected[i]];
+            if (request.status == PathRequestStatus.Done)
+            {
+                var path = paths[selected[i]];
+                var renderer = lineRenderers.New();
+                var points = new Vector3[request.pathSize];
+                for (var j = 0; j < request.pathSize; ++j)
+                    points[j] = path[j].location.position;
+                renderer.positionCount = request.pathSize;
+                renderer.SetPositions(points);
+            }
+        }
+
+        lineRenderers.Present();
+
         //按下左键, 选择中
         if (Input.GetMouseButtonUp(0) && fortresses.Length > 0)
         {
@@ -214,5 +231,6 @@ public class ControllSystem : ComponentSystem {
                 FinishSelection();
             }
         }
+
     }
 }

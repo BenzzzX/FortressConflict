@@ -34,31 +34,32 @@ public class FormationMovementSystem : JobComponentSystem
         public ComponentDataArray<CrowdAgentData> agents;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
-        float dt;
+        public float dt;
 
         public void Execute(int index)
         {
             var formationData = formationDatas[index];
             var agent = agents[index];
-            if (!formationData.isAttacking && agent.state == CrowdState.moving)
+            if (formationData.state != FormationState.Attacking && agent.state == CrowdState.Moving)
             {
                 var position = positions[index];
                 var heading = headings[index];
 
-                var targetPos = agent.steerTarget.position;
+                var targetPos = (float3)agent.steerTarget.location.position;
                 var distance = math.distance(targetPos, position.Value);
                 if (distance < math_experimental.epsilon)
                 {
                     if(agent.steerTarget.flag == StraightPathFlags.End)
                     {
-                        agent.state |= CrowdState.reached;
+                        agent.state |= CrowdState.Reached;
                         return;
                     }
                     var path = paths[index];
                     agent.pathId += 1;
                     agent.fromPoint = agent.steerTarget;
                     agent.steerTarget = path[agent.pathId];
-                    targetPos = agent.steerTarget.position;
+                    targetPos = agent.steerTarget.location.position;
+                    distance = math.distance(targetPos, position.Value);
                 }
 
                 var targetDir = math_experimental.normalizeSafe(targetPos - position.Value);
@@ -68,11 +69,8 @@ public class FormationMovementSystem : JobComponentSystem
 
                 if (cos < 1f - math_experimental.epsilon)
                 {
-                    var targetRot = math.lookRotationToQuaternion(targetDir, math.up());
-                    var rot = math.lookRotationToQuaternion(dir, math.up());
                     var alpha = math.min(agent.rotateSpeed * dt / angle, 1f);
-                    var newRot = math.slerp(rot, targetRot, alpha);
-                    heading.Value = math.forward(newRot);
+                    heading.Value = math.lerp(dir, targetDir, alpha);
                 }
 
                 var headingTarget = heading.Value * agent.speed * dt + position.Value;
@@ -87,7 +85,7 @@ public class FormationMovementSystem : JobComponentSystem
                 position.Value = agent.location.position;
 
                 formationData.sideOffset = math.lerp(agent.steerTarget.vertexSide, agent.fromPoint.vertexSide, 
-                    distance / math.distance(agent.steerTarget.position, agent.fromPoint.position));
+                    distance / math.distance(agent.steerTarget.location.position, agent.fromPoint.location.position));
 
                 positions[index] = position;
                 agents[index] = agent;
@@ -119,7 +117,9 @@ public class FormationMovementSystem : JobComponentSystem
             paths = formations.paths,
             positions = formations.positions,
             agents = formations.agents,
-            query = query
+            query = query,
+            dt = Time.deltaTime
+           
         };
 
         return moveJob.Schedule(formations.Length, SimulationState.SmallBatchSize, inputDeps);

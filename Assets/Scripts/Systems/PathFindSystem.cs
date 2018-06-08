@@ -156,7 +156,7 @@ public class PathFindSystem : JobComponentSystem
                         {
                             pathBuffer[offset + i] = new PathPoint
                             {
-                                position = straitPathBuffer[i].position,
+                                location = straitPathBuffer[i],
                                 vertexSide = vertexSideBuffer[i],
                                 flag = pathFlagBuffer[i]
                             };

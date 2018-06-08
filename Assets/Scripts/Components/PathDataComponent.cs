@@ -1,9 +1,10 @@
 ﻿using Unity.Mathematics;
+using UnityEngine.Experimental.AI;
 
 [System.Serializable]
 public struct PathPoint
 {
-    public float3 position;
+    public NavMeshLocation location;
     public float vertexSide;
     public StraightPathFlags flag;
 }

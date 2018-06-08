@@ -2,27 +2,22 @@
 using Unity.Entities;
 using Unity.Transforms;
 
+public enum FormationState
+{
+    Attacking = 1
+}
+
 [System.Serializable]
 public struct FormationData : IComponentData
 {
     public int troops;
 
     public int width;
-    public int unitCount;
 
     public float sideOffset;
 
-    public bool isAttacking
-    {
-        get { return IsBit(0); }
-        set { SetBit(0, value); }
-    }
-
-    public bool isMarching
-    {
-        get { return IsBit(1); }
-        set { SetBit(1, value); }
-    }
+    [MixedEnum]
+    public FormationState state;
 
     public float3 GetUnitSteerTarget(Position position, Heading heading, int unitId)
     {
@@ -32,22 +27,10 @@ public struct FormationData : IComponentData
         // required to hit the corners correctly
         var side = sideVector * width * sideOffset * 0.5f;
 
-        var height = math.ceil((float)unitCount / width);
-        return position.Value + sideVector * ((unitId % width) - (width * 0.5f)) + side +
+        var height = math.ceil((float)troops / width);
+        var offset = sideVector * ((unitId % width) - (width * 0.5f)) + side +
                             heading.Value * (unitId / width - (height * 0.5f));
-    }
-
-    // bit 0    - isAttacking
-    private int bitfield;
-
-    private bool IsBit(int bit)
-    {
-        return (bitfield & (1 << bit)) != 0;
-    }
-
-    private void SetBit(int bit, bool value)
-    {
-        bitfield = value ? (bitfield | (1 << bit)) : (bitfield & ~(1 << bit));
+        return position.Value + offset*0.2f;
     }
 }
 

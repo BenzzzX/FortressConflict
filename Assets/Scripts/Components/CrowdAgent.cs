@@ -3,12 +3,11 @@ using Unity.Mathematics;
 using UnityEngine.Experimental.AI;
 using UnityEditor;
 
-[System.Serializable]
 public enum CrowdState
 {
-    waiting = 1,
-    moving = 2,
-    reached = 4,
+    Waiting = 1,
+    Moving = 2,
+    Reached = 4,
 }
 
 [System.Serializable]
