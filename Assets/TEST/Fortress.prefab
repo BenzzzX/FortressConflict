@@ -34,6 +34,8 @@ GameObject:
   - component: {fileID: 114960286748613300}
   - component: {fileID: 120131455405132114}
   - component: {fileID: 114692256679443010}
+  - component: {fileID: 114282197926238110}
+  - component: {fileID: 114684613565590550}
   m_Layer: 0
   m_Name: Fortress
   m_TagString: Untagged
@@ -48,8 +50,8 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1029075079585054}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10, y: 2, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalPosition: {x: -10, y: 5, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -137,6 +139,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SerializedData:
     alliance: 0
+--- !u!114 &114282197926238110
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1029075079585054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 206d9b88d9fd4c4c9e5a1a976224e421, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SerializedData:
+    Value:
+      x: 0
+      y: 0
+      z: 0
 --- !u!114 &114314467661396896
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -244,6 +262,37 @@ MonoBehaviour:
     flag: 0
   - vertexSide: 0
     flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+  - vertexSide: 0
+    flag: 0
+--- !u!114 &114684613565590550
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1029075079585054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f45258a2afd45afabd0d78ae4fcf414, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114692256679443010
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -256,19 +305,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SerializedData:
-    maxTroops: 100
-    width: 8
+    maxTroops: 500
     attackRange: 0
     senceRange: 0
     fov: 0
-    speed: 1.2
+    speed: 3
     rotateSpeed: 30
     unitType:
-      cellRadius: 0
       separationWeight: 0
       alignmentWeight: 0
       targetWeight: 0
-      obstacleAversionDistance: 0
+      width: 0
+      rotateSpeed: 0
+      speed: 0
+      bound:
+        x: 0
+        y: 0
 --- !u!114 &114898051873541328
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -281,8 +333,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SerializedData:
-    troops: 500
-    maxTroops: 500
+    troops: 1000
+    maxTroops: 1000
 --- !u!114 &114960286748613300
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -311,9 +363,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SerializedData:
     troops: 0
+    offset:
+      x: 5
+      y: -5
+      z: 0
     doneDispatch: 1
     remain: 0
-    frequency: 1
+    frequency: 0.25
 --- !u!114 &114979091513897096
 MonoBehaviour:
   m_ObjectHideFlags: 1
