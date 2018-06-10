@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using UnityEngine.Experimental.AI;
 using UnityEditor;
 
-public enum CrowdState
+public enum AgentState
 {
     Waiting = 1,
     Moving = 2,
@@ -11,13 +11,9 @@ public enum CrowdState
 }
 
 [System.Serializable]
-public struct CrowdAgentData : IComponentData
+public struct FormationAgentData : IComponentData
 {
     public int pathId;
-
-    public float speed;
-
-    public float rotateSpeed;
 
     public PathPoint fromPoint;
 
@@ -26,11 +22,11 @@ public struct CrowdAgentData : IComponentData
     public NavMeshLocation location;
 
     [MixedEnum]
-    public CrowdState state;
+    public AgentState state;
 
 }
 
-public class CrowdAgent : ComponentDataWrapper<CrowdAgentData>
+public class FormationAgent : ComponentDataWrapper<FormationAgentData>
 {
 
 }

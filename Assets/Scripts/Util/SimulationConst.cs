@@ -6,6 +6,6 @@
     public const int BigBatchSize = 8;
     public const int SmallBatchSize = 16;
     public const int TinyBatchSize = 64;
-    public const int MaxPathSize = 20;
+    public const int MaxPathSize = 30;
     public const float Gravity = -20;
 }

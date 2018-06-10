@@ -4,6 +4,7 @@ using Unity.Collections;
 using Unity.Transforms;
 using Unity.Mathematics;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 using Unity.Rendering;
 
@@ -31,7 +32,7 @@ public class ControllSystem : ComponentSystem {
 
     [Inject]
     [ReadOnly]
-    ComponentDataFromEntity<FortressData> fortressData;
+    ComponentDataFromEntity<DispatchData> dispatches;
     
     [Inject]
     ComponentDataFromEntity<PathRequestData> pathRequests;
@@ -44,67 +45,67 @@ public class ControllSystem : ComponentSystem {
     [ReadOnly]
     ComponentDataFromEntity<Position> positions;
 
-    NativeList<Entity> selected;
-    Entity target;
 
-    ComponentPool<LineRenderer> lineRenderers;
+    List<GameObject> selectedObject;
+    NativeList<Entity> selected;
+    Entity lastTarget;
+    GameObject lastTargetObject;
 
     public const float maxOffset = 2f;
 
     protected override void OnCreateManager(int capacity)
     {
+        selectedObject = new List<GameObject>();
         selected = new NativeList<Entity>(Allocator.Persistent);
-        target = new Entity();
-
-        lineRenderers = new ComponentPool<LineRenderer>();
-        lineRenderers.prefab = FortressSettings.Instance.lineRenderer;
+        lastTarget = new Entity();
     }
 
     protected override void OnDestroyManager()
     {
         selected.Dispose();
     }
+    
 
     void FinishSelection()
     {
         //取消所有选中
-        for (var i = 0; i < selected.Length; ++i)
+        for (var i = 0; i < selectedObject.Count; ++i)
         {
+            var renderer = selectedObject[i].GetComponent<MeshRenderer>();
             FortressSettings setting = FortressSettings.Instance;
-            PostUpdateCommands.SetSharedComponent(selected[i], setting.baseRenderer);
+            renderer.material = setting.baseMaterial;
+            var lineRenderer = selectedObject[i].GetComponent<LineRenderer>();
+            lineRenderer.enabled = false;
         }
 
         selected.Clear();
-        target = new Entity();
+        selectedObject.Clear();
+        lastTarget = new Entity();
+        lastTargetObject = null;
     }
 
     protected override void OnUpdate()
     {
-        //去掉无效的引用
-        for (var i = 0; i < selected.Length; ++i)
-        {
-            var entity = selected[i];
-            var owner = EntityManager.GetComponentData<OwnerData>(entity);
-            while (i < selected.Length && owner.alliance != 0)
-                selected.RemoveAtSwapBack(i);
-        }
 
-        for (var i = 0; i < selected.Length; ++i)
+        if(lastTarget != new Entity())
         {
-            var request = pathRequests[selected[i]];
-            if (request.status == PathRequestStatus.Done)
+            for (var i = 0; i < selectedObject.Count; ++i)
             {
-                var path = paths[selected[i]];
-                var renderer = lineRenderers.New();
-                var points = new Vector3[request.pathSize];
-                for (var j = 0; j < request.pathSize; ++j)
-                    points[j] = path[j].location.position;
-                renderer.positionCount = request.pathSize;
-                renderer.SetPositions(points);
+                var entity = selected[i];
+                var request = pathRequests[entity];
+                if (request.status == PathRequestStatus.Done)
+                {
+                    var path = paths[entity];
+                    var renderer = selectedObject[i].GetComponent<LineRenderer>();
+                    renderer.enabled = true;
+                    var points = new Vector3[request.pathSize];
+                    for (var j = 0; j < request.pathSize; ++j)
+                        points[j] = path[j].location.position;
+                    renderer.positionCount = request.pathSize;
+                    renderer.SetPositions(points);
+                }
             }
         }
-
-        lineRenderers.Present();
 
         //按下左键, 选择中
         if (Input.GetMouseButtonUp(0) && fortresses.Length > 0)
@@ -120,106 +121,116 @@ public class ControllSystem : ComponentSystem {
 
             //未命中就跳过
             if (hitInfo.distance == 0) return;
-            var hitPoint = hitInfo.point;
+            var newTargetObject = hitInfo.transform.gameObject;
 
-            var closestIndex = 0;
 
-            var closestDistance = math.distance(fortresses.positions[closestIndex].Value, hitPoint);
+            Entity newTarget = new Entity();
 
-            for(var i=0;i<fortresses.Length;++i)
+
+            if (newTargetObject != null)
             {
-                var distance = math.distance(fortresses.positions[i].Value, hitPoint);
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closestIndex = i;
-                }
+                var entityWrapper = newTargetObject.GetComponent<GameObjectEntity>();
+
+                if (entityWrapper != null)
+                    newTarget = entityWrapper.Entity;
             }
 
 
-            if (closestDistance < maxOffset)
+            if (newTarget != new Entity())
             {
-                var entity = fortresses.entities[closestIndex];
-                var owner = EntityManager.GetComponentData<OwnerData>(entity);
+                var owner = EntityManager.GetComponentData<OwnerData>(newTarget);
 
-                if (selected.Length > 0 && target == entity)
+                if (selected.Length > 0 && lastTarget == newTarget)
                 {
                     for (var i = 0; i < selected.Length; ++i)
                     {
                         //@TODO: Start march
-                        DispatchData march = EntityManager.GetComponentData<DispatchData>(selected[i]);
-                        FortressData fortressData = EntityManager.GetComponentData<FortressData>(selected[i]);
-                        if(march.target == target)
+
+                        var self = selected[i];
+                        DispatchData march = EntityManager.GetComponentData<DispatchData>(self);
+                        FortressData fortressData = EntityManager.GetComponentData<FortressData>(self);
+                        if(march.target == lastTarget)
                         {
                             march.troops += (fortressData.troops - march.troops) / 2;
                         }
                         else
                         {
-                            march.target = target;
+                            march.target = lastTarget;
                             march.troops = fortressData.troops / 2;
                         }
-                        EntityManager.SetComponentData(selected[i], march);
+                        EntityManager.SetComponentData(self, march);
                     }
 
                     FinishSelection();
 
 
                 }
-                else if(selected.Length == 1 && entity == selected[0])
+                else if(selected.Length == 1 && newTarget == selected[0])
                 {
                     //@TODO: Stop march
-                    DispatchData march = EntityManager.GetComponentData<DispatchData>(entity);
+                    DispatchData march = EntityManager.GetComponentData<DispatchData>(newTarget);
                     march.troops = 0;
-                    EntityManager.SetComponentData(entity, march);
+                    EntityManager.SetComponentData(newTarget, march);
 
                     FinishSelection();
                 }
                 else
                 {
 
-                    if (target != new Entity()) //如果没有确认为目标,则选中
+                    if (lastTarget != new Entity()) //如果没有确认为目标,则选中
                     {
-                        var targetOwner = EntityManager.GetComponentData<OwnerData>(target);
+                        var targetOwner = EntityManager.GetComponentData<OwnerData>(lastTarget);
                         if (targetOwner.alliance == 0)
-                            if (!selected.Contains(target))
-                            {
-                                selected.Add(target);
-                                FortressSettings setting = FortressSettings.Instance;
-                                PostUpdateCommands.SetSharedComponent(target, setting.selectedRenderer);
-                            }
-                        target = new Entity();
+                        {
+                            selected.Add(lastTarget);
+                            selectedObject.Add(lastTargetObject);
+                            var renderer = lastTargetObject.GetComponent<MeshRenderer>();
+                            FortressSettings setting = FortressSettings.Instance;
+                            renderer.material = setting.selectedMaterial;
+                        }
+                        lastTarget = new Entity();
+                        lastTargetObject = null;
                     }
 
                     if (selected.Length == 0 && owner.alliance == 0) //第一个直接选中
                     {
-                        selected.Add(entity);
+                        selected.Add(newTarget);
+                        selectedObject.Add(newTargetObject);
+                        var renderer = newTargetObject.GetComponent<MeshRenderer>();
                         FortressSettings setting = FortressSettings.Instance;
-                        EntityManager.SetSharedComponentData(entity, setting.selectedRenderer);
+                        renderer.material = setting.selectedMaterial;
                     }
-                    else if (target != entity) //新的目标
+                    else if (lastTarget != newTarget) //新的目标
                     {
                         if (selected.Length > 1) //两个或以上可以取消选择作为目标
                         {
-                            var index = selected.IndexOf(entity);
+                            var index = selected.IndexOf(newTarget);
                             if (index >= 0) //如果已经选中了,需要取消
                             {
-                                var request = pathRequests[entity];
-                                request.status = PathRequestStatus.Idle;
-                                pathRequests[entity] = request;
+                                var renderer = newTargetObject.GetComponent<MeshRenderer>();
                                 FortressSettings setting = FortressSettings.Instance;
-                                PostUpdateCommands.SetSharedComponent(entity, setting.baseRenderer);
+                                renderer.material = setting.baseMaterial;
+                                var lineRenderer = newTargetObject.GetComponent<LineRenderer>();
+                                lineRenderer.enabled = false;
                                 selected.RemoveAtSwapBack(index);
+                                selectedObject.RemoveAtSwapBack(index);
                             }
                         }
 
-                        target = entity;
+                        lastTarget = newTarget;
+                        lastTargetObject = newTargetObject;
 
                         for (var i = 0; i < selected.Length; ++i)
                         {
                             var request = pathRequests[selected[i]];
+                            if(request.status == PathRequestStatus.Done && math.distance(positions[lastTarget].Value, request.end) < 0.1f) continue;
                             request.status = PathRequestStatus.NewRequest;
-                            request.start = positions[selected[i]].Value;
-                            request.end = positions[target].Value;
+                            var dispatch = dispatches[selected[i]];
+
+                            request.start = positions[selected[i]].Value + dispatch.offset;
+                            
+                            dispatch = dispatches[lastTarget];
+                            request.end = positions[lastTarget].Value + dispatch.offset;
                             request.mask = NavMesh.AllAreas;
                             pathRequests[selected[i]] = request;
                         }

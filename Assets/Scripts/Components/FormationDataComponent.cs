@@ -4,7 +4,8 @@ using Unity.Transforms;
 
 public enum FormationState
 {
-    Attacking = 1
+    Spawning = 1,
+    Attacking = 2,
 }
 
 [System.Serializable]
@@ -12,14 +13,12 @@ public struct FormationData : IComponentData
 {
     public int troops;
 
-    public int width;
-
     public float sideOffset;
 
     [MixedEnum]
     public FormationState state;
 
-    public float3 GetUnitSteerTarget(Position position, Heading heading, int unitId)
+    public float3 GetUnitAlignTarget(int unitId, Position position, Heading heading, int width)
     {
         float3 sideVector = heading.Value.zyx;
         sideVector.x = -sideVector.x;
@@ -29,18 +28,12 @@ public struct FormationData : IComponentData
 
         var height = math.ceil((float)troops / width);
         var offset = sideVector * ((unitId % width) - (width * 0.5f)) + side +
-                            heading.Value * (unitId / width - (height * 0.5f));
-        return position.Value + offset*0.2f;
+                            heading.Value * ((height * 0.5f) - unitId / width);
+        return position.Value + offset;
     }
 }
 
 
 public class FormationDataComponent : ComponentDataWrapper<FormationData>
 {
-
-}
-
-public struct FormationNavigationData : IComponentData
-{
-    public float3 TargetPosition;
 }

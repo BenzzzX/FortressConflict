@@ -4,19 +4,16 @@ using UnityEngine;
 public class FortressSettings : ScriptableObject {
 
     [SerializeField]
-    public MeshInstanceRenderer baseRenderer;
+    public Material baseMaterial;
 
     [SerializeField]
-    public MeshInstanceRenderer selectedRenderer;
+    public Material selectedMaterial;
 
     [SerializeField]
     public GameObject lineRenderer;
 
     [SerializeField]
     public GameObject formationPrefab;
-
-    [SerializeField]
-    public int formationTroops = 250;
 
     private static FortressSettings instance;
 

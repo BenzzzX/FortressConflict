@@ -14,7 +14,9 @@ public class FormationMovementSystem : JobComponentSystem
         public ComponentDataArray<FormationData> formationDatas;
         public ComponentDataArray<Position> positions;
         public ComponentDataArray<Heading> headings;
-        public ComponentDataArray<CrowdAgentData> agents;
+        public ComponentDataArray<FormationAgentData> agents;
+        [ReadOnly]
+        public SharedComponentDataArray<FormationTypeData> formationTypes;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
 
@@ -31,7 +33,9 @@ public class FormationMovementSystem : JobComponentSystem
         public ComponentDataArray<FormationData> formationDatas;
         public ComponentDataArray<Position> positions;
         public ComponentDataArray<Heading> headings;
-        public ComponentDataArray<CrowdAgentData> agents;
+        public ComponentDataArray<FormationAgentData> agents;
+        [ReadOnly]
+        public SharedComponentDataArray<FormationTypeData> formationTypes;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
         public float dt;
@@ -40,10 +44,11 @@ public class FormationMovementSystem : JobComponentSystem
         {
             var formationData = formationDatas[index];
             var agent = agents[index];
-            if (formationData.state != FormationState.Attacking && agent.state == CrowdState.Moving)
+            if ((formationData.state & FormationState.Attacking) == 0 && agent.state == AgentState.Moving)
             {
                 var position = positions[index];
                 var heading = headings[index];
+                var type = formationTypes[index];
 
                 var targetPos = (float3)agent.steerTarget.location.position;
                 var distance = math.distance(targetPos, position.Value);
@@ -51,7 +56,8 @@ public class FormationMovementSystem : JobComponentSystem
                 {
                     if(agent.steerTarget.flag == StraightPathFlags.End)
                     {
-                        agent.state |= CrowdState.Reached;
+                        agent.state |= AgentState.Reached;
+                        agents[index] = agent;
                         return;
                     }
                     var path = paths[index];
@@ -69,20 +75,23 @@ public class FormationMovementSystem : JobComponentSystem
 
                 if (cos < 1f - math_experimental.epsilon)
                 {
-                    var alpha = math.min(agent.rotateSpeed * dt / angle, 1f);
-                    heading.Value = math.lerp(dir, targetDir, alpha);
+                    var alpha = math.min(type.rotateSpeed * dt / angle, 1f);
+                    Quaternion rot = math.lookRotationToQuaternion(dir, math.up());
+                    Quaternion targetRot = math.lookRotationToQuaternion(targetDir, math.up());
+                    rot = Quaternion.Slerp(rot, targetRot, alpha);
+                    heading.Value = rot * Vector3.forward;
                 }
 
-                var headingTarget = heading.Value * agent.speed * dt + position.Value;
-                var shiftTarget = targetDir * agent.speed * dt + position.Value;
+                var speedScale = math.select(1f, 0.5f, (formationData.state & FormationState.Spawning) != 0);
 
-                var radius = ((agent.speed / (agent.rotateSpeed / 360f)) / 6.283f);
 
-                var nextTarget = math.select(headingTarget, shiftTarget, distance < radius);
-                nextTarget = math.select(nextTarget, targetPos, distance < agent.speed * dt);
+                var shiftTarget = targetDir * type.speed * speedScale * dt * math.abs(cos) + position.Value;
+                
+                var nextTarget = math.select(shiftTarget, targetPos, distance < type.speed * speedScale * dt);
 
                 agent.location = query.MoveLocation(agent.location, nextTarget);
                 position.Value = agent.location.position;
+
 
                 formationData.sideOffset = math.lerp(agent.steerTarget.vertexSide, agent.fromPoint.vertexSide, 
                     distance / math.distance(agent.steerTarget.location.position, agent.fromPoint.location.position));
@@ -116,6 +125,7 @@ public class FormationMovementSystem : JobComponentSystem
             headings = formations.headings,
             paths = formations.paths,
             positions = formations.positions,
+            formationTypes = formations.formationTypes,
             agents = formations.agents,
             query = query,
             dt = Time.deltaTime

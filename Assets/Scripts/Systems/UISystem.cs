@@ -9,48 +9,22 @@ using UnityEngine.Experimental.PlayerLoop;
 [UpdateAfter(typeof(PathFindSystem))]
 public class UISystem : JobComponentSystem
 {
-    public struct Fortresses
-    {
-        [ReadOnly]
-        public ComponentDataArray<FortressData> fortressDatas;
-        [ReadOnly]
-        public ComponentDataArray<Position> positions;
-
-        public int Length;
-    }
-
-    public struct Pathfinders
-    {
-        [ReadOnly]
-        public ComponentDataArray<PathRequestData> pathRequests;
-        [ReadOnly]
-        public FixedArrayArray<PathPoint> paths;
-
-        public int Length;
-    }
-
     public struct Formations
     {
         [ReadOnly]
-        public ComponentDataArray<FormationData> formationDatas;
+        public ComponentDataArray<FormationData> datas;
         [ReadOnly]
         public ComponentDataArray<Position> positions;
         [ReadOnly]
         public ComponentDataArray<Heading> headings;
+        [ReadOnly]
+        public SharedComponentDataArray<FormationTypeData> types;
 
         public int Length;
     }
 
-
-
-    [Inject]
-    public Fortresses fortresses;
-
     [Inject]
     public Formations formations;
-
-    [Inject]
-    public Pathfinders pathfinders;
 
     protected override void OnCreateManager(int capacity)
     {
@@ -62,12 +36,17 @@ public class UISystem : JobComponentSystem
     {
         for (var i = 0; i < formations.Length; ++i)
         {
-            var formationData = formations.formationDatas[i];
+            var data = formations.datas[i];
             var position = formations.positions[i];
             var heading = formations.headings[i];
-            for (int j = 0; j < formationData.troops; j++)
+            var type = formations.types[i];
+            for (int j = 0; j < data.troops;)
             {
-                Debug.DrawLine(position.Value, formationData.GetUnitSteerTarget(position, heading, j), Color.yellow, Time.deltaTime * 2);
+                var n = math.min(j + type.unitType.width, data.troops);
+                Debug.DrawLine(data.GetUnitAlignTarget(n - 1, position, heading, type.unitType.width)
+                    , data.GetUnitAlignTarget(j, position, heading, type.unitType.width)
+                    , Color.yellow, Time.deltaTime * 2);
+                j = n;
             }
         }
 

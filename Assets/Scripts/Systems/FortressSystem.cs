@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using Unity.Entities;
 using UnityEngine;
 
-public class FortressTroopsSystem : JobComponentSystem
+public class FortressSystem : JobComponentSystem
 {
     public struct Spawning
     {

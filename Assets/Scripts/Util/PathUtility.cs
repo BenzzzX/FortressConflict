@@ -85,54 +85,58 @@ public class PathUtils
     // Retrace portals between corners and register if type of polygon changes
     public static int RetracePortals(NavMeshQuery query, int startIndex, int endIndex
         , NativeSlice<PolygonId> path, int n, Vector3 termPos
-        , ref NativeArray<NavMeshLocation> straightPath
-        , ref NativeArray<StraightPathFlags> straightPathFlags
+        , NativeSlice<PathPoint> straightPath
         , int maxStraightPath)
     {
-
+        PathPoint point;
         for (var k = startIndex; k < endIndex - 1; ++k)
         {
             var type1 = query.GetPolygonType(path[k]);
             var type2 = query.GetPolygonType(path[k + 1]);
+
             if (type1 != type2)
             {
                 Vector3 l, r;
                 var status = query.GetPortalPoints(path[k], path[k + 1], out l, out r);
 
                 float3 cpa1, cpa2;
-                SegmentSegmentCPA(out cpa1, out cpa2, l, r, straightPath[n - 1].position, termPos);
-                straightPath[n] = query.CreateLocation(cpa1, path[k + 1]);
+                SegmentSegmentCPA(out cpa1, out cpa2, l, r, straightPath[n - 1].location.position, termPos);
 
-                straightPathFlags[n] = (type2 == NavMeshPolyTypes.OffMeshConnection) ? StraightPathFlags.OffMeshConnection : 0;
+                point = straightPath[n];
+
+                point.location = query.CreateLocation(cpa1, path[k + 1]);
+
+                point.flag = (type2 == NavMeshPolyTypes.OffMeshConnection) ? StraightPathFlags.OffMeshConnection : 0;
                 if (++n == maxStraightPath)
                 {
                     return maxStraightPath;
                 }
+                straightPath[n] = point;
             }
         }
-        straightPath[n] = query.CreateLocation(termPos, path[endIndex]);
-        straightPathFlags[n] = query.GetPolygonType(path[endIndex]) == NavMeshPolyTypes.OffMeshConnection ? StraightPathFlags.OffMeshConnection : 0;
+        point = straightPath[n];
+        point.location = query.CreateLocation(termPos, path[endIndex]);
+        point.flag = query.GetPolygonType(path[endIndex]) == NavMeshPolyTypes.OffMeshConnection ? StraightPathFlags.OffMeshConnection : 0;
+        straightPath[n] = point;
         return ++n;
     }
 
     public static PathQueryStatus FindStraightPath(NavMeshQuery query, Vector3 startPos, Vector3 endPos
         , NativeSlice<PolygonId> path, int pathSize
-        , ref NativeArray<NavMeshLocation> straightPath
-        , ref NativeArray<StraightPathFlags> straightPathFlags
-        , ref NativeArray<float> vertexSide
+        , NativeSlice<PathPoint> straightPath
         , ref int straightPathCount
         , int maxStraightPath)
     {
         if (!query.IsValid(path[0]))
         {
-            straightPath[0] = new NavMeshLocation(); // empty terminator
+            straightPath[0] = new PathPoint(); // empty terminator
             return PathQueryStatus.Failure; // | PathQueryStatus.InvalidParam;
         }
-
-        straightPath[0] = query.CreateLocation(startPos, path[0]);
-
-        straightPathFlags[0] = StraightPathFlags.Start;
-        vertexSide[0] = 0;
+        var point = straightPath[0];
+        point.location = query.CreateLocation(startPos, path[0]);
+        point.flag = StraightPathFlags.Start;
+        point.vertexSide = 0;
+        straightPath[0] = point;
 
         var apexIndex = 0;
         var n = 1;
@@ -181,11 +185,10 @@ public class PathUtils
                     var polyLocalToWorld = query.PolygonLocalToWorldMatrix(path[apexIndex]);
                     var termPos = polyLocalToWorld.MultiplyPoint(apex + left);
 
-                    n = RetracePortals(query, apexIndex, leftIndex, path, n, termPos, ref straightPath, ref straightPathFlags, maxStraightPath);
-                    if (vertexSide.Length > 0)
-                    {
-                        vertexSide[n - 1] = -1;
-                    }
+                    n = RetracePortals(query, apexIndex, leftIndex, path, n, termPos, straightPath, maxStraightPath);
+                    point = straightPath[n-1];
+                    point.vertexSide = -1;
+                    straightPath[n-1] = point;
 
                     //Debug.Log("LEFT");
 
@@ -206,11 +209,10 @@ public class PathUtils
                     var polyLocalToWorld = query.PolygonLocalToWorldMatrix(path[apexIndex]);
                     var termPos = polyLocalToWorld.MultiplyPoint(apex + right);
 
-                    n = RetracePortals(query, apexIndex, rightIndex, path, n, termPos, ref straightPath, ref straightPathFlags, maxStraightPath);
-                    if (vertexSide.Length > 0)
-                    {
-                        vertexSide[n - 1] = 1;
-                    }
+                    n = RetracePortals(query, apexIndex, rightIndex, path, n, termPos, straightPath, maxStraightPath);
+                    point = straightPath[n - 1];
+                    point.vertexSide = 1;
+                    straightPath[n-1] = point;
 
                     //Debug.Log("RIGHT");
 
@@ -243,25 +245,18 @@ public class PathUtils
 
         // Remove the the next to last if duplicate point - e.g. start and end positions are the same
         // (in which case we have get a single point)
-        if (n > 0 && (straightPath[n - 1].position == endPos))
+        if (n > 0 && (straightPath[n - 1].location.position == endPos))
             n--;
 
-        n = RetracePortals(query, apexIndex, pathSize - 1, path, n, endPos, ref straightPath, ref straightPathFlags, maxStraightPath);
-        if (vertexSide.Length > 0)
-        {
-            vertexSide[n - 1] = 0;
-        }
-
-        if (n == maxStraightPath)
-        {
-            straightPathCount = n;
-            return PathQueryStatus.Success; // | PathQueryStatus.BufferTooSmall;
-        }
-
-        // Fix flag for final path point
-        straightPathFlags[n - 1] = StraightPathFlags.End;
+        n = RetracePortals(query, apexIndex, pathSize - 1, path, n, endPos, straightPath, maxStraightPath);
+        point = straightPath[n - 1];
+        point.vertexSide = 0;
+        point.flag = StraightPathFlags.End;
+        straightPath[n - 1] = point;
 
         straightPathCount = n;
+
+        // Fix flag for final path point
         return PathQueryStatus.Success;
     }
 }

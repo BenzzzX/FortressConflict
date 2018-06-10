@@ -23,6 +23,7 @@ public class PathFindSystem : JobComponentSystem
         public NativeArray<PathRequestData> requests;
         public NativeArray<int> pathStart;
         public NativeArray<PathPoint> pathBuffer;
+        NativeArray<PolygonId> resultBuffer;
 
         public struct State
         {
@@ -45,6 +46,7 @@ public class PathFindSystem : JobComponentSystem
             pathBuffer = new NativeArray<PathPoint>(MAX_COUNT * MAX_PATHSIZE, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             pathStart = new NativeArray<int>(MAX_COUNT, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             state = new NativeArray<State>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            resultBuffer = new NativeArray<PolygonId>(MAX_COUNT * 5, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
             var s = new State();
             s.entityInUse = State.NONE;
@@ -61,18 +63,28 @@ public class PathFindSystem : JobComponentSystem
             pathBuffer.Dispose();
             pathStart.Dispose();
             state.Dispose();
+            resultBuffer.Dispose();
         }
 
-        public void CopyResult(ref FixedArrayArray<PathPoint> paths, ref ComponentDataArray<PathRequestData> pathRequests)
+        public int CopyResult(ref FixedArrayArray<PathPoint> paths, ref ComponentDataArray<PathRequestData> pathRequests)
         {
             var s = state[0];
+            var count = 0;
             for(int i = 0;i < s.entitySize; ++i)
             {
                 var entity = entities[i];
                 var request = requests[i];
                 var originRequest = pathRequests[entity];
-                if (originRequest.status > PathRequestStatus.InProgress) continue; //放弃寻路, 丢弃结果
-                if (math.distance(originRequest.start, request.start) > 0.001f || math.distance(originRequest.end, request.end) > 0.001f) continue; //新的请求, 丢弃结果
+                if (request.status >= PathRequestStatus.Done)
+                    count++;
+                if (originRequest.status > PathRequestStatus.InProgress) //放弃寻路, 丢弃结果
+                {
+                    continue;
+                }
+                if (math.distance(originRequest.start, request.start) > 0.001f || math.distance(originRequest.end, request.end) > 0.001f)
+                {
+                    continue; //新的请求, 丢弃结果
+                }
                 pathRequests[entity] = request;
                 if(request.status == PathRequestStatus.Done)
                 {
@@ -85,6 +97,7 @@ public class PathFindSystem : JobComponentSystem
                     }
                 }
             }
+            return count;
         }
 
         public void ClearResult()
@@ -108,7 +121,7 @@ public class PathFindSystem : JobComponentSystem
             state[0] = s;
         }
 
-        public void Update(ref NativeArray<PolygonId> resultBuffer, ref NativeArray<StraightPathFlags> pathFlagBuffer, ref NativeArray<float> vertexSideBuffer, ref NativeArray<NavMeshLocation> straitPathBuffer, int maxIter = 100)
+        public void Update(int maxIter = 100)
         {
             var s = state[0];
             PathQueryStatus status = PathQueryStatus.Success;
@@ -149,18 +162,10 @@ public class PathFindSystem : JobComponentSystem
                     {
                         query.GetPathResult(resultBuffer);
                         var offset = s.pathSize;
-                        var maxPathSize = math.min(pathSize, MAX_PATHSIZE);
-                        PathUtils.FindStraightPath(query, request.start, request.end, resultBuffer, pathSize
-                            , ref straitPathBuffer, ref pathFlagBuffer, ref vertexSideBuffer, ref pathSize, maxPathSize);
-                        for (var i = 0; i < pathSize; i++)
-                        {
-                            pathBuffer[offset + i] = new PathPoint
-                            {
-                                location = straitPathBuffer[i],
-                                vertexSide = vertexSideBuffer[i],
-                                flag = pathFlagBuffer[i]
-                            };
-                        }
+                        var pathSlice = new NativeSlice<PathPoint>(pathBuffer, offset);
+                        status = PathUtils.FindStraightPath(query, request.start, request.end, resultBuffer, pathSize
+                            , pathSlice, ref pathSize, MAX_PATHSIZE);
+                        if (status.IsFailure()) break;
                         pathStart[s.entityInUse] = offset;
                         request.pathSize = pathSize;
                         s.pathSize += pathSize;
@@ -192,6 +197,8 @@ public class PathFindSystem : JobComponentSystem
     
     NativeCounter counter;
 
+    JobHandle endFence;
+
     public const int MAX_QUERIES = 10;
 
     [ComputeJobOptimization]
@@ -210,8 +217,6 @@ public class PathFindSystem : JobComponentSystem
                 waitingEntities.Enqueue(index);
                 counter.Increment();
             }
-                
-            
         }
     }
 
@@ -254,18 +259,9 @@ public class PathFindSystem : JobComponentSystem
     {
         public RequestBatch batch;
 
-        [DeallocateOnJobCompletion]
-        public NativeArray<PolygonId> resultBuffer;
-        [DeallocateOnJobCompletion]
-        public NativeArray<NavMeshLocation> pathBuffer;
-        [DeallocateOnJobCompletion]
-        public NativeArray<StraightPathFlags> pathFlagBuffer;
-        [DeallocateOnJobCompletion]
-        public NativeArray<float> vertexSideBuffer;
-
         public void Execute()
         {
-            batch.Update(ref resultBuffer,ref pathFlagBuffer,ref vertexSideBuffer,ref pathBuffer);
+            batch.Update();
         }
     }
 
@@ -275,10 +271,11 @@ public class PathFindSystem : JobComponentSystem
         public RequestBatch batch;
         public ComponentDataArray<PathRequestData> requests;
         public FixedArrayArray<PathPoint> paths;
+        public NativeCounter counter;
 
         public void Execute()
         {
-            batch.CopyResult(ref paths, ref requests);
+            counter.Count -= batch.CopyResult(ref paths, ref requests);
         }
     }
 
@@ -300,6 +297,8 @@ public class PathFindSystem : JobComponentSystem
             batches[i] = new RequestBatch(2000);
         waitingEntities = new NativeQueue<int>(Allocator.Persistent);
         counter = new NativeCounter(Allocator.Persistent);
+
+        endFence = new JobHandle();
     }
 
     protected override void OnStopRunning()
@@ -313,15 +312,6 @@ public class PathFindSystem : JobComponentSystem
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
         waitingEntities.Clear();
-        var count = 0;
-        for (var j = 0; j < MAX_QUERIES; ++j)
-        {
-            var batch = batches[j];
-            count += batch.state[0].entitySize;
-        }
-
-        counter.Count = count;
-
         var fetchJob = new FetchRequest
         {
             waitingEntities = waitingEntities,
@@ -346,14 +336,7 @@ public class PathFindSystem : JobComponentSystem
         var fences = new NativeArray<JobHandle>(MAX_QUERIES, Allocator.Temp);
         for (var i = 0; i < MAX_QUERIES; ++i)
         {
-            var processJob = new ProcessRequest
-            {
-                batch = batches[i],
-                resultBuffer = new NativeArray<PolygonId>(SimulationState.MaxPathSize * 5, Allocator.TempJob, NativeArrayOptions.UninitializedMemory),
-                pathBuffer = new NativeArray<NavMeshLocation>(SimulationState.MaxPathSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory),
-                pathFlagBuffer = new NativeArray<StraightPathFlags>(SimulationState.MaxPathSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory),
-                vertexSideBuffer = new NativeArray<float>(SimulationState.MaxPathSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory),
-            };
+            var processJob = new ProcessRequest { batch = batches[i] };
             fences[i] = processJob.Schedule(fillFence);
         }
         var processFence = JobHandle.CombineDependencies(fences);
@@ -365,24 +348,25 @@ public class PathFindSystem : JobComponentSystem
             {
                 batch = batches[i],
                 paths = requesters.paths,
-                requests = requesters.requestDatas
+                requests = requesters.requestDatas,
+                counter = counter
             };
             getFence = getJob.Schedule(getFence);
         }
 
         for (var i = 0; i < MAX_QUERIES; ++i)
         {
-            var clearJob = new ClearResult
+            var clearResultJob = new ClearResult
             {
                 batch = batches[i]
             };
-            fences[i] = clearJob.Schedule(getFence);
+            fences[i] = clearResultJob.Schedule(getFence);
         }
-        var clearFence = JobHandle.CombineDependencies(fences);
+        endFence = JobHandle.CombineDependencies(fences);
 
         fences.Dispose();
 
-        return clearFence;
+        return endFence;
     }
 }
 
