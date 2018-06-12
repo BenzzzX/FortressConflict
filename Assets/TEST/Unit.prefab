@@ -21,7 +21,6 @@ GameObject:
   - component: {fileID: 4120071339269174}
   - component: {fileID: 114599241344299266}
   - component: {fileID: 114810720648982406}
-  - component: {fileID: 114057739864272158}
   - component: {fileID: 114378502687580404}
   - component: {fileID: 114428370964659850}
   - component: {fileID: 114267963165487966}
@@ -46,23 +45,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114057739864272158
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1928369210532720}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 79a088ddbdc474b45beae960bbfd0208, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SerializedData:
-    cellRadius: 0
-    separationWeight: 0
-    alignmentWeight: 0
-    targetWeight: 0
-    obstacleAversionDistance: 0
 --- !u!114 &114267963165487966
 MonoBehaviour:
   m_ObjectHideFlags: 1

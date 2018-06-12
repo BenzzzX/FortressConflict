@@ -7,4 +7,7 @@ using UnityEditor;
 public struct UnitAgentData : IComponentData
 {
     public NavMeshLocation location;
+    public float2 velocity;
+
+
 }

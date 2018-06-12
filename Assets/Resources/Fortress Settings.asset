@@ -15,6 +15,4 @@ MonoBehaviour:
   selectedMaterial: {fileID: 2100000, guid: d1556431f36da6a4582da6849d1f77c3, type: 2}
   lineRenderer: {fileID: 1930644738535572, guid: 30fd759a023ade24199e7f1ecc567382,
     type: 2}
-  formationPrefab: {fileID: 1169974974994272, guid: 33d6604394859a64497d0f103d542a9d,
-    type: 2}
-  formationTroops: 100
+  unitPrefab: {fileID: 1928369210532720, guid: 6fd284a1bd084da469cc4c72f96b2a5b, type: 2}

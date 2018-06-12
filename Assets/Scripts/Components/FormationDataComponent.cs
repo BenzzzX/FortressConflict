@@ -28,8 +28,8 @@ public struct FormationData : IComponentData
 
         var height = math.ceil((float)troops / width);
         var offset = sideVector * ((unitId % width) - (width * 0.5f)) + side +
-                            heading.Value * ((height * 0.5f) - unitId / width);
-        return position.Value + offset;
+                            heading.Value * (height - unitId / width);
+        return position.Value + offset * 1.5f;
     }
 }
 

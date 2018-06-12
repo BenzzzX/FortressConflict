@@ -312,15 +312,12 @@ MonoBehaviour:
     speed: 3
     rotateSpeed: 30
     unitType:
-      separationWeight: 0
-      alignmentWeight: 0
-      targetWeight: 0
-      width: 0
-      rotateSpeed: 0
-      speed: 0
-      bound:
-        x: 0
-        y: 0
+      formationWidth: 10
+      maxSpeed: 5
+      zOffset: 1
+      radius: 0.6
+      timeHorizon: 1
+      neighborDist: 2
 --- !u!114 &114898051873541328
 MonoBehaviour:
   m_ObjectHideFlags: 1

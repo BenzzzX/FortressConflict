@@ -13,7 +13,7 @@ public class FortressSettings : ScriptableObject {
     public GameObject lineRenderer;
 
     [SerializeField]
-    public GameObject formationPrefab;
+    public GameObject unitPrefab;
 
     private static FortressSettings instance;
 

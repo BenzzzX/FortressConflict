@@ -42,9 +42,9 @@ public class UISystem : JobComponentSystem
             var type = formations.types[i];
             for (int j = 0; j < data.troops;)
             {
-                var n = math.min(j + type.unitType.width, data.troops);
-                Debug.DrawLine(data.GetUnitAlignTarget(n - 1, position, heading, type.unitType.width)
-                    , data.GetUnitAlignTarget(j, position, heading, type.unitType.width)
+                var n = math.min(j + type.unitType.formationWidth, data.troops);
+                Debug.DrawLine(data.GetUnitAlignTarget(n - 1, position, heading, type.unitType.formationWidth)
+                    , data.GetUnitAlignTarget(j, position, heading, type.unitType.formationWidth)
                     , Color.yellow, Time.deltaTime * 2);
                 j = n;
             }

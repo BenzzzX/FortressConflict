@@ -69,32 +69,27 @@ public class FormationMovementSystem : JobComponentSystem
                 }
 
                 var targetDir = math_experimental.normalizeSafe(targetPos - position.Value);
-                var dir = heading.Value;
+                var dir = math_experimental.normalizeSafe(heading.Value);
                 var cos = math.dot(targetDir, dir);
-                var angle = math.degrees(math.acos(math.min(math.abs(cos), 1f)) * 2f);
 
                 if (cos < 1f - math_experimental.epsilon)
                 {
-                    var alpha = math.min(type.rotateSpeed * dt / angle, 1f);
-                    Quaternion rot = math.lookRotationToQuaternion(dir, math.up());
-                    Quaternion targetRot = math.lookRotationToQuaternion(targetDir, math.up());
-                    rot = Quaternion.Slerp(rot, targetRot, alpha);
-                    heading.Value = rot * Vector3.forward;
+                    heading.Value = Vector3.RotateTowards(dir, targetDir, dt * math.radians(type.rotateSpeed), 10f);
                 }
 
                 var speedScale = math.select(1f, 0.5f, (formationData.state & FormationState.Spawning) != 0);
 
 
-                var shiftTarget = targetDir * type.speed * speedScale * dt * math.abs(cos) + position.Value;
+                var shiftTarget = targetDir * type.speed * speedScale * dt * cos * cos + position.Value;
                 
                 var nextTarget = math.select(shiftTarget, targetPos, distance < type.speed * speedScale * dt);
 
                 agent.location = query.MoveLocation(agent.location, nextTarget);
                 position.Value = agent.location.position;
 
-
-                formationData.sideOffset = math.lerp(agent.steerTarget.vertexSide, agent.fromPoint.vertexSide, 
-                    distance / math.distance(agent.steerTarget.location.position, agent.fromPoint.location.position));
+                var alpha = distance / math.distance(agent.steerTarget.location.position, agent.fromPoint.location.position);
+                formationData.sideOffset = math.lerp(agent.steerTarget.vertexSide, agent.fromPoint.vertexSide,
+                     alpha * alpha);
 
                 positions[index] = position;
                 agents[index] = agent;

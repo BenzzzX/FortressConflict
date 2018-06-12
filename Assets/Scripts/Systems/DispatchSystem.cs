@@ -6,6 +6,7 @@ using Unity.Mathematics.Experimental;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.AI;
+using UnityEngine.AI;
 
 class DispatchSystem : ComponentSystem
 {
@@ -28,13 +29,20 @@ class DispatchSystem : ComponentSystem
     [Inject]
     Fortresses fortresses;
 
+    NavMeshQuery query;
+
+    int agentType;
 
     protected override void OnCreateManager(int capacity)
     {
+        var world = NavMeshWorld.GetDefaultWorld();
+        query = new NavMeshQuery(world, Allocator.Persistent);
+        agentType = NavMesh.GetSettingsByIndex(1).agentTypeID;
     }
 
     protected override void OnDestroyManager()
     {
+        query.Dispose();
     }
     
 
@@ -127,8 +135,9 @@ class DispatchSystem : ComponentSystem
                 var formation = dispatch.dispatching;
                 var fortressData = EntityManager.GetComponentData<FortressData>(fortress);
                 var formationData = EntityManager.GetComponentData<FormationData>(formation);
+                var fortressPosition = EntityManager.GetComponentData<Position>(fortress);
                 var type = EntityManager.GetSharedComponentData<FormationTypeData>(fortress);
-                var troops = Mathf.Min(dispatch.troops, type.unitType.width, fortressData.troops, type.maxTroops - formationData.troops);
+                var troops = Mathf.Min(dispatch.troops, type.unitType.formationWidth, fortressData.troops, type.maxTroops - formationData.troops);
                 fortressData.troops -= troops;
                 dispatch.troops -= troops;
                 dispatch.troops = Mathf.Min(fortressData.troops, dispatch.troops);
@@ -138,12 +147,39 @@ class DispatchSystem : ComponentSystem
                     dispatch.doneDispatch = 1;
                     formationData.state &= ~FormationState.Spawning;
                 }
+                var units = new NativeArray<Entity>(troops, Allocator.Temp);
+                var side = math_experimental.normalizeSafe(new float3(-dispatch.offset.z, 0, dispatch.offset.x));
+                var midPos = fortressPosition.Value + dispatch.offset;
+                var dir = new float3(dispatch.offset.x, 0, dispatch.offset.z);
+                var prefab = FortressSettings.Instance.unitPrefab;
+                EntityManager.Instantiate(prefab, units);
                 //@TODO: Spawn Unit
-                for(var j=0;j<troops;++j)
+                for (var j=0;j<troops;++j)
                 {
+                    var unit = units[j];
+                    var alignPos = side * (j - (type.unitType.formationWidth * 0.5f)) + midPos;
+                    var location = query.MapLocation(alignPos, Vector3.one * 10f, agentType);
 
+                    var agent = new UnitAgentData
+                    {
+                        location = location,
+                        velocity = new float2()
+                    };
+                    var position = new Position{ Value = location.position };
+                    var heading = new Heading { Value = math_experimental.normalizeSafe(dir) };
+                    var inFormation = new InFormationData
+                    {
+                        formationEntity = formation,
+                        index = formationData.troops
+                    };
+                    EntityManager.AddSharedComponentData(unit, type.unitType);
+                    EntityManager.AddComponentData(unit, agent);
+                    EntityManager.AddComponentData(unit, inFormation);
+                    EntityManager.SetComponentData(unit, position);
+                    EntityManager.SetComponentData(unit, heading);
                     formationData.troops++;
                 }
+                units.Dispose();
                 EntityManager.SetComponentData(formation, formationData);
                 EntityManager.SetComponentData(fortress, fortressData);
             }

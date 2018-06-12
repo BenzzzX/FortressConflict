@@ -4,16 +4,16 @@ using Unity.Mathematics;
 [System.Serializable]
 public struct UnitTypeData : ISharedComponentData
 {
-    public float separationWeight;
-    public float alignmentWeight;
-    public float targetWeight;
-    public int width;
+    public int formationWidth;
+    
+    public float maxSpeed;
 
-    public float rotateSpeed;
-    public float speed;
     public float zOffset;
 
-    public int2 bound;
+
+    public float radius;
+    public float timeHorizon;
+    public float neighborDist;
 }
 
 
