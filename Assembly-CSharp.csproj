@@ -77,9 +77,9 @@
     <Compile Include="Assets\Scripts\Components\SpawnDataComponent.cs" />
     <Compile Include="Assets\Scripts\Components\TextureAnimatorData.cs" />
     <Compile Include="Assets\Scripts\Components\UnitAgent.cs" />
+    <Compile Include="Assets\Scripts\Components\UnitAgentTypeData.cs" />
     <Compile Include="Assets\Scripts\Components\UnitAttackData.cs" />
     <Compile Include="Assets\Scripts\Components\UnitDataComponent.cs" />
-    <Compile Include="Assets\Scripts\Components\UnitTypeDataComponent.cs" />
     <Compile Include="Assets\Scripts\Systems\ControllSystem.cs" />
     <Compile Include="Assets\Scripts\Systems\DispatchSystem.cs" />
     <Compile Include="Assets\Scripts\Systems\FormationMovementSystem.cs" />
@@ -105,64 +105,64 @@
     <Compile Include="Assets\Scripts\Util\RVOUtility.cs" />
     <Compile Include="Assets\Scripts\Util\SimulationConst.cs" />
     <Reference Include="Unity.Transforms">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Transforms.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Transforms.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Entities.Properties">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Entities.Properties.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Entities.Properties.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Jobs">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Jobs.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Jobs.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Jobs.Editor">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Jobs.Editor.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Jobs.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Entities.Editor">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Entities.Editor.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Entities.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Properties">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Properties.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Properties.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Collections">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Collections.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Collections.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.StandardEvents">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Burst.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Burst.dll</HintPath>
     </Reference>
     <Reference Include="Unity.PackageManagerUI.Editor">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Rendering.Hybrid">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Rendering.Hybrid.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Rendering.Hybrid.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Properties.Editor">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Properties.Editor.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Properties.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Entities.Hybrid">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Entities.Hybrid.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Entities.Hybrid.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Mathematics">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Mathematics.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Mathematics.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Entities">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Entities.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Entities.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst.Editor">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Burst.Editor.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Burst.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Transforms2D">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Transforms2D.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Transforms2D.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Transforms.Hybrid">
-      <HintPath>C:/Users/BenzzZX/Documents/GitHub/FortressConflict/Library/ScriptAssemblies/Unity.Transforms.Hybrid.dll</HintPath>
+      <HintPath>C:/Users/Benzz/Documents/FortressConflict/Library/ScriptAssemblies/Unity.Transforms.Hybrid.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AIModule">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2018.2.0b6/Editor/Data/Managed/UnityEngine/UnityEngine.AIModule.dll</HintPath>
@@ -363,16 +363,16 @@
       <HintPath>C:/Program Files/Unity/Hub/Editor/2018.2.0b6/Editor/Data/UnityExtensions/Unity/UnitySpatialTracking/RuntimeEditor/UnityEngine.SpatialTracking.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.Analytics">
-      <HintPath>C:/Users/BenzzZX/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.analytics@2.0.16/UnityEngine.Analytics.dll</HintPath>
+      <HintPath>C:/Users/Benzz/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.analytics@2.0.16/UnityEngine.Analytics.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
-      <HintPath>C:/Users/BenzzZX/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.collections@0.0.9-preview.1/System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <HintPath>C:/Users/Benzz/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.collections@0.0.9-preview.1/System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.Purchasing">
-      <HintPath>C:/Users/BenzzZX/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.purchasing@2.0.1/UnityEngine.Purchasing.dll</HintPath>
+      <HintPath>C:/Users/Benzz/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.purchasing@2.0.1/UnityEngine.Purchasing.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.StandardEvents">
-      <HintPath>C:/Users/BenzzZX/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.standardevents@1.0.13/UnityEngine.StandardEvents.dll</HintPath>
+      <HintPath>C:/Users/Benzz/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.standardevents@1.0.13/UnityEngine.StandardEvents.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2018.2.0b6/Editor/Data/MonoBleedingEdge/lib/mono/4.7.1-api/mscorlib.dll</HintPath>
@@ -725,7 +725,7 @@
   -->
   <PropertyGroup>
     <IncrementalCompiler>true</IncrementalCompiler>
-    <CscToolPath>C:\Users\BenzzZX\AppData\Local\Unity\cache\packages\packages.unity.com\com.unity.incrementalcompiler@0.0.42-preview.1\.bin</CscToolPath>
+    <CscToolPath>C:\Users\Benzz\AppData\Local\Unity\cache\packages\packages.unity.com\com.unity.incrementalcompiler@0.0.42-preview.1\.bin</CscToolPath>
     <DocumentationFile>12345</DocumentationFile>
     <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
   </PropertyGroup>

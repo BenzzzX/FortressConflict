@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 
 [System.Serializable]
-public struct FormationTypeData : ISharedComponentData
+public struct FormationTypeData : IComponentData
 {
     public int maxTroops;
     public float attackRange;
@@ -10,10 +10,10 @@ public struct FormationTypeData : ISharedComponentData
 
     public float speed;
     public float rotateSpeed;
-    public UnitTypeData unitType;
+    public UnitAgentTypeData unitType;
 }
 
 
-class FormationTypeDataComponent : SharedComponentDataWrapper<FormationTypeData>
+class FormationTypeDataComponent : ComponentDataWrapper<FormationTypeData>
 {
 }

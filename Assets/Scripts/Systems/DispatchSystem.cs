@@ -19,7 +19,7 @@ class DispatchSystem : ComponentSystem
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
         [ReadOnly]
-        public SharedComponentDataArray<FormationTypeData> types;
+        public ComponentDataArray<FormationTypeData> types;
         public ComponentDataArray<DispatchData> dispatchs;
         public ComponentDataArray<FortressData> datas;
         public EntityArray entities;
@@ -79,7 +79,7 @@ class DispatchSystem : ComponentSystem
             var dispatch = EntityManager.GetComponentData<DispatchData>(fortress);
 
             var path = EntityManager.GetFixedArray<PathPoint>(fortress);
-            var type = EntityManager.GetSharedComponentData<FormationTypeData>(fortress);
+            var type = EntityManager.GetComponentData<FormationTypeData>(fortress);
             var owner = EntityManager.GetComponentData<DispatchData>(fortress);
             
 
@@ -110,7 +110,7 @@ class DispatchSystem : ComponentSystem
             EntityManager.AddComponentData(formation, owner);
             EntityManager.AddComponentData(formation, heading);
             EntityManager.AddComponent(formation, pathType);
-            EntityManager.AddSharedComponentData(formation, type);
+            EntityManager.AddComponentData(formation, type);
 
             var pathData = EntityManager.GetFixedArray<PathPoint>(formation);
             path = EntityManager.GetFixedArray<PathPoint>(fortress);
@@ -136,7 +136,7 @@ class DispatchSystem : ComponentSystem
                 var fortressData = EntityManager.GetComponentData<FortressData>(fortress);
                 var formationData = EntityManager.GetComponentData<FormationData>(formation);
                 var fortressPosition = EntityManager.GetComponentData<Position>(fortress);
-                var type = EntityManager.GetSharedComponentData<FormationTypeData>(fortress);
+                var type = EntityManager.GetComponentData<FormationTypeData>(fortress);
                 var troops = Mathf.Min(dispatch.troops, type.unitType.formationWidth, fortressData.troops, type.maxTroops - formationData.troops);
                 fortressData.troops -= troops;
                 dispatch.troops -= troops;
@@ -172,7 +172,7 @@ class DispatchSystem : ComponentSystem
                         formationEntity = formation,
                         index = formationData.troops
                     };
-                    EntityManager.AddSharedComponentData(unit, type.unitType);
+                    EntityManager.AddComponentData(unit, type.unitType);
                     EntityManager.AddComponentData(unit, agent);
                     EntityManager.AddComponentData(unit, inFormation);
                     EntityManager.SetComponentData(unit, position);

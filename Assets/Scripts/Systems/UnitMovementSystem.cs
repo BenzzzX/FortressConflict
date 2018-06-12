@@ -40,7 +40,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
         [ReadOnly] public ComponentDataArray<Position> positions;
         [ReadOnly] public ComponentDataArray<UnitAgentData> navAgents;
         //@TODO: Remove this
-        [ReadOnly] public SharedComponentDataArray<UnitTypeData> types;
+        [ReadOnly] public ComponentDataArray<UnitAgentTypeData> types;
 
         public float dt;
 
@@ -55,7 +55,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
             var agent = navAgents[index];
             var type = types[index];
             var align = formationHeadings[formation];
-            var targetPos = formationData.GetUnitAlignTarget(inFormation.index, formationPositions[formation], align, type.formationWidth);
+            var targetPos = formationData.GetUnitAlignTarget(inFormation.index, formationPositions[formation], align, type.formationWidth, type.radius);
             var position = positions[index];
             position.Value.y -= 1;
 
@@ -89,7 +89,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
 
 
-    //[ComputeJobOptimization]
+    [ComputeJobOptimization]
     private struct RVO : IJobParallelFor
     {
         [DeallocateOnJobCompletion]
@@ -112,9 +112,8 @@ public class UnitPathFollowSystem : JobComponentSystem {
         [DeallocateOnJobCompletion]
         [NativeDisableParallelForRestriction]
         public NativeArray<RVOUtility.Line> lineBuffer;
-
-        //@TODO: Remove this
-        [ReadOnly] public SharedComponentDataArray<UnitTypeData> types;
+        
+        [ReadOnly] public ComponentDataArray<UnitAgentTypeData> types;
         [ReadOnly] public ComponentDataArray<UnitAgentData> navAgents;
         [DeallocateOnJobCompletion]
         [ReadOnly] public NativeArray<float2> desireVelocity;
@@ -261,7 +260,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
         }
     }
 
-    //[ComputeJobOptimization]
+    [ComputeJobOptimization]
     private struct SyncTransform : IJobParallelFor
     {
         [DeallocateOnJobCompletion]
@@ -272,7 +271,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
         public ComponentDataArray<Position> positions;
         public ComponentDataArray<UnitAgentData> navAgents;
         public ComponentDataArray<Heading> headings;
-        [ReadOnly] public SharedComponentDataArray<UnitTypeData> types;
+        [ReadOnly] public ComponentDataArray<UnitAgentTypeData> types;
 
         public float dt;
 
@@ -304,7 +303,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
         [ReadOnly]
         public ComponentDataArray<InFormationData> inFormations;
         [ReadOnly]
-        public SharedComponentDataArray<UnitTypeData> types;
+        public ComponentDataArray<UnitAgentTypeData> types;
 
         public int Length;
     }
@@ -316,7 +315,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
     [Inject] ComponentDataFromEntity<Heading> formationHeadings;
     NavMeshQuery query;
 
-    const int MAX_NEIGHBORS = 10;
+    const int MAX_NEIGHBORS = 8;
 
     protected override void OnCreateManager(int capacity)
     {
@@ -346,13 +345,12 @@ public class UnitPathFollowSystem : JobComponentSystem {
         var lineBuffer = new NativeArray<RVOUtility.Line>(units.Length * MAX_NEIGHBORS * 2, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         var newVelocitys = new NativeArray<float2>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-        var copyJob = new CopyAgents
+        var initJob = new CopyAgents
         {
             agents = agentBuffer,
             positions = units.positions,
             agentIndices = agentIndices
         };
-        var fence = copyJob.Schedule(units.Length, SimulationState.TinyBatchSize, inputDeps);
 
         var buildJob = new BuildKdTree
         {
@@ -362,7 +360,6 @@ public class UnitPathFollowSystem : JobComponentSystem {
             agentIndicesInverse = agentIndicesInverse
         };
 
-        var buildFence = buildJob.Schedule(fence);
 
         var followJob = new FollowFormation
         {
@@ -379,7 +376,6 @@ public class UnitPathFollowSystem : JobComponentSystem {
             dt = Time.deltaTime
         };
 
-        var followFence = followJob.Schedule(units.Length, SimulationState.TinyBatchSize, fence);
 
         var rvoJob = new RVO
         {
@@ -397,8 +393,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
             navAgents = units.agents
         };
 
-        fence = rvoJob.Schedule(units.Length, SimulationState.SmallBatchSize, JobHandle.CombineDependencies(buildFence, followFence));
-
+       
         var applyJob = new ApplyVelocity
         {
             newVelocitys = newVelocitys,
@@ -407,16 +402,12 @@ public class UnitPathFollowSystem : JobComponentSystem {
             dt = Time.deltaTime
         };
 
-        fence = applyJob.Schedule(units.Length, SimulationState.TinyBatchSize, fence);
-
         var moveJob = new BatchedMove
         {
             prevLocations = locationBuffer,
             steerTargets = positionBuffer,
             query = query,
         };
-
-        fence = moveJob.ScheduleBatch(units.Length, SimulationState.TinyBatchSize, fence);
 
         var syncJob = new SyncTransform
         {
@@ -429,6 +420,19 @@ public class UnitPathFollowSystem : JobComponentSystem {
             dt = Time.deltaTime
         };
 
+        //初始化rvo需要的数据
+        var fence = initJob.Schedule(units.Length, SimulationState.TinyBatchSize, inputDeps);
+        //构建KdTree
+        var buildFence = buildJob.Schedule(fence);
+        //确定期望速度
+        var followFence = followJob.Schedule(units.Length, SimulationState.TinyBatchSize, inputDeps);
+        //RVO算规避,确定实际速度
+        fence = rvoJob.Schedule(units.Length, SimulationState.TinyBatchSize, JobHandle.CombineDependencies(buildFence, followFence));
+        //根据速度移动
+        fence = applyJob.Schedule(units.Length, SimulationState.TinyBatchSize, fence);
+        //将移动的位置限制在寻路网格上
+        fence = moveJob.ScheduleBatch(units.Length, SimulationState.TinyBatchSize, fence);
+        //同步在寻路网格上的位置
         fence = syncJob.Schedule(units.Length, SimulationState.TinyBatchSize, fence);
 
         return fence;

@@ -16,7 +16,7 @@ public class FormationMovementSystem : JobComponentSystem
         public ComponentDataArray<Heading> headings;
         public ComponentDataArray<FormationAgentData> agents;
         [ReadOnly]
-        public SharedComponentDataArray<FormationTypeData> formationTypes;
+        public ComponentDataArray<FormationTypeData> formationTypes;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
 
@@ -26,6 +26,7 @@ public class FormationMovementSystem : JobComponentSystem
     [Inject]
     Formations formations;
 
+    [ComputeJobOptimization]
     struct FollowPath : IJobParallelFor
     {
         [ReadOnly]
@@ -35,7 +36,7 @@ public class FormationMovementSystem : JobComponentSystem
         public ComponentDataArray<Heading> headings;
         public ComponentDataArray<FormationAgentData> agents;
         [ReadOnly]
-        public SharedComponentDataArray<FormationTypeData> formationTypes;
+        public ComponentDataArray<FormationTypeData> formationTypes;
         [ReadOnly]
         public FixedArrayArray<PathPoint> paths;
         public float dt;

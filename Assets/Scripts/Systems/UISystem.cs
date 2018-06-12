@@ -18,7 +18,7 @@ public class UISystem : JobComponentSystem
         [ReadOnly]
         public ComponentDataArray<Heading> headings;
         [ReadOnly]
-        public SharedComponentDataArray<FormationTypeData> types;
+        public ComponentDataArray<FormationTypeData> types;
 
         public int Length;
     }
@@ -43,8 +43,8 @@ public class UISystem : JobComponentSystem
             for (int j = 0; j < data.troops;)
             {
                 var n = math.min(j + type.unitType.formationWidth, data.troops);
-                Debug.DrawLine(data.GetUnitAlignTarget(n - 1, position, heading, type.unitType.formationWidth)
-                    , data.GetUnitAlignTarget(j, position, heading, type.unitType.formationWidth)
+                Debug.DrawLine(data.GetUnitAlignTarget(n - 1, position, heading, type.unitType.formationWidth, type.unitType.radius)
+                    , data.GetUnitAlignTarget(j, position, heading, type.unitType.formationWidth, type.unitType.radius)
                     , Color.yellow, Time.deltaTime * 2);
                 j = n;
             }
