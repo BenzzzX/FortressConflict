@@ -8,7 +8,7 @@ using UnityEngine.Experimental.PlayerLoop;
 
 [UpdateAfter(typeof(PathFindSystem))]
 public class UISystem : JobComponentSystem
-{
+{   /*
     public struct Formations
     {
         [ReadOnly]
@@ -28,12 +28,12 @@ public class UISystem : JobComponentSystem
 
     protected override void OnCreateManager(int capacity)
     {
-        base.OnCreateManager(capacity);
     }
-
+    
     // Update is called once per frame
     protected override JobHandle OnUpdate(JobHandle inDeps)
     {
+        
         for (var i = 0; i < formations.Length; ++i)
         {
             var data = formations.datas[i];
@@ -49,11 +49,11 @@ public class UISystem : JobComponentSystem
                 j = n;
             }
         }
-
+        
         return inDeps;
     }
-
+    
     protected override void OnDestroyManager()
     {
-    }
+    }*/
 }

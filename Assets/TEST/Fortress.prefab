@@ -305,18 +305,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SerializedData:
-    maxTroops: 200
     attackRange: 0
     senceRange: 0
     fov: 0
-    speed: 3
+    speed: 10
     rotateSpeed: 30
     unitType:
-      formationWidth: 20
-      maxSpeed: 5
+      maxTroops: 500
+      formationWidth: 50
+      maxSpeed: 15
       zOffset: 1
       radius: 0.5
-      timeHorizon: 1
+      timeHorizon: 0.4
       neighborDist: 2.5
 --- !u!114 &114898051873541328
 MonoBehaviour:
@@ -330,8 +330,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SerializedData:
-    troops: 400
-    maxTroops: 400
+    troops: 20000
+    maxTroops: 20000
 --- !u!114 &114960286748613300
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -366,7 +366,7 @@ MonoBehaviour:
       z: 0
     doneDispatch: 1
     remain: 0
-    frequency: 0.8
+    frequency: 0.25
 --- !u!114 &114979091513897096
 MonoBehaviour:
   m_ObjectHideFlags: 1

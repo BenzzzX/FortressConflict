@@ -3,7 +3,6 @@
 [System.Serializable]
 public struct FormationTypeData : IComponentData
 {
-    public int maxTroops;
     public float attackRange;
     public int senceRange;
     public float fov;

@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 public static class KdTreeUtility
 {
-    public const int MAX_LEAF_SIZE = 10;
+    public const int MAX_LEAF_SIZE = 5;
     
     public struct TreeNode
     {
@@ -93,12 +93,12 @@ public static class KdTreeUtility
         array[r] = t;
     }
 
-    static public void QueryNeighbors(NativeArray<TreeNode> tree, NativeArray<float2> agents, int agentID, float rangeSq, NativeSlice<int> neighbors, NativeSlice<float> distance, ref int neighborSize)
+    static public void QueryNeighbors(NativeArray<TreeNode> tree, NativeArray<float2> agents, int agentID, float rangeSq, NativeLocalArray<int> neighbors, NativeLocalArray<float> distance, ref int neighborSize)
     {
         QueryNeighbors(tree, agents, agentID, ref rangeSq, 0, neighbors, distance, ref neighborSize);
     }
 
-    static void QueryNeighbors(NativeArray<TreeNode> tree, NativeArray<float2> agents, int agentID, ref float rangeSq, int index, NativeSlice<int> neighbors, NativeSlice<float> distances, ref int neighborSize)
+    static void QueryNeighbors(NativeArray<TreeNode> tree, NativeArray<float2> agents, int agentID, ref float rangeSq, int index, NativeLocalArray<int> neighbors, NativeLocalArray<float> distances, ref int neighborSize)
     {
         var agent = agents[agentID];
         if (tree[index].end - tree[index].begin <= MAX_LEAF_SIZE)

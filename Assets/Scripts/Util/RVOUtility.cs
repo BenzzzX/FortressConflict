@@ -17,10 +17,11 @@ public static class RVOUtility
         return vector1.x * vector2.y - vector1.y * vector2.x;
     }
 
-    static bool linearProgram1(NativeSlice<Line> lines, int lineNo, float radius, ref float2 optVelocity, bool directionOpt, ref float2 result)
+    static bool linearProgram1(NativeLocalArray<Line> lines, int lineNo, float radius, float2 optVelocity, bool directionOpt, ref float2 result)
     {
-        float dotProduct = math.dot(lines[lineNo].point, lines[lineNo].direction);
-        float discriminant = sqr(dotProduct) + sqr(radius) - math.lengthSquared(lines[lineNo].point);
+        var line = lines[lineNo];
+        float dotProduct = math.dot(line.point, line.direction);
+        float discriminant = sqr(dotProduct) + sqr(radius) - math.lengthSquared(line.point);
 
         if (discriminant < 0.0f)
         {
@@ -34,8 +35,8 @@ public static class RVOUtility
 
         for (int i = 0; i < lineNo; ++i)
         {
-            float denominator = det(lines[lineNo].direction, lines[i].direction);
-            float numerator = det(lines[i].direction, lines[lineNo].point - lines[i].point);
+            float denominator = det(line.direction, lines[i].direction);
+            float numerator = det(lines[i].direction, line.point - lines[i].point);
 
             if (math.abs(denominator) <= math_experimental.epsilon)
             {
@@ -51,7 +52,7 @@ public static class RVOUtility
             }
 
             float t = numerator / denominator;
-
+            
             if (denominator >= 0.0f)
             {
                 /* Line i bounds line lineNo on the right. */
@@ -72,40 +73,35 @@ public static class RVOUtility
         if (directionOpt)
         {
             /* Optimize direction. */
-            if (math.dot(optVelocity, lines[lineNo].direction) > 0.0f)
-            {
-                /* Take right extreme. */
-                result = lines[lineNo].point + tRight * lines[lineNo].direction;
-            }
-            else
-            {
-                /* Take left extreme. */
-                result = lines[lineNo].point + tLeft * lines[lineNo].direction;
-            }
+            result = math.select(
+                line.point + tLeft * line.direction, /* Take left extreme. */
+                line.point + tRight * line.direction, /* Take right extreme. */
+                math.dot(optVelocity, line.direction) > 0.0f
+                );
         }
         else
         {
             /* Optimize closest point. */
-            float t = math.dot(lines[lineNo].direction, (optVelocity - lines[lineNo].point));
+            float t = math.dot(line.direction, (optVelocity - line.point));
 
             if (t < tLeft)
             {
-                result = lines[lineNo].point + tLeft * lines[lineNo].direction;
+                result = line.point + tLeft * line.direction;
             }
             else if (t > tRight)
             {
-                result = lines[lineNo].point + tRight * lines[lineNo].direction;
+                result = line.point + tRight * line.direction;
             }
             else
             {
-                result = lines[lineNo].point + t * lines[lineNo].direction;
+                result = line.point + t * line.direction;
             }
         }
 
         return true;
     }
 
-    public static int linearProgram2(NativeSlice<Line> lines, int lineSize, float radius, ref float2 optVelocity, bool directionOpt, out float2 result)
+    public static int linearProgram2(NativeLocalArray<Line> lines, int lineSize, float radius, float2 optVelocity, bool directionOpt, out float2 result)
     {
         if (directionOpt)
         {
@@ -133,7 +129,7 @@ public static class RVOUtility
                 /* Result does not satisfy constraint i. Compute new optimal result. */
                 float2 tempResult = result;
 
-                if (!linearProgram1(lines, i, radius, ref optVelocity, directionOpt, ref result))
+                if (!linearProgram1(lines, i, radius, optVelocity, directionOpt, ref result))
                 {
                     result = tempResult;
                     return i;
@@ -144,16 +140,16 @@ public static class RVOUtility
         return lineSize;
     }
 
-    public static void linearProgram3(NativeSlice<Line> lines, int lineSize, NativeSlice<Line> projLines, int beginLine, float radius, ref float2 result)
+    public static void linearProgram3(NativeLocalArray<Line> lines, int lineSize, NativeLocalArray<Line> projLines, int beginLine, float radius, ref float2 result)
     {
-        float distance = 0.0f;
+        float distance = 0f;
 
         for (int i = beginLine; i < lineSize; ++i)
         {
             if (det(lines[i].direction, lines[i].point - result) > distance)
             {
                 /* Result does not satisfy constraint of line i. */
-
+                int k = 0;
                 for (int j = 0; j < i; ++j)
                 {
                     Line line;
@@ -180,13 +176,13 @@ public static class RVOUtility
                     }
 
                     line.direction = math.normalize(lines[j].direction - lines[i].direction);
-                    projLines[j] = line;
+                    projLines[k++] = line;
                 }
 
                 float2 tempResult = result;
                 var optVelocity = new float2(-lines[i].direction.y, lines[i].direction.x);
 
-                if (linearProgram2(projLines, i, radius, ref optVelocity, true, out result) < i)
+                if (linearProgram2(projLines, k, radius, optVelocity, true, out result) < k)
                 {
                     /* This should in principle not happen.  The result is by definition
 					 * already in the feasible region of this linear program. If it fails,

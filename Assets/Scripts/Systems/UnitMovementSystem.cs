@@ -10,7 +10,6 @@ using UnityEngine;
 
 public class UnitPathFollowSystem : JobComponentSystem {
 
-
     [ComputeJobOptimization]
     private struct CopyAgents : IJobParallelFor
     {
@@ -20,8 +19,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
         public void Execute(int index)
         {
-            var position = positions[index].Value;
-            agents[index] = position.xz;
+            agents[index] = positions[index].Value.xz;
             agentIndices[index] = index;
         }
     }
@@ -55,7 +53,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
             var agent = navAgents[index];
             var type = types[index];
             var align = formationHeadings[formation];
-            var targetPos = formationData.GetUnitAlignTarget(inFormation.index, formationPositions[formation], align, type.formationWidth, type.radius);
+            var targetPos = formationData.GetUnitAlignTarget(inFormation.index, formationPositions[formation], align, type);
             var position = positions[index];
             position.Value.y -= 1;
 
@@ -105,14 +103,17 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
         [DeallocateOnJobCompletion]
         [NativeDisableParallelForRestriction]
-        public NativeArray<int> neighberBuffer;
+        public NativeLocalArray<int> neighbors;
         [DeallocateOnJobCompletion]
         [NativeDisableParallelForRestriction]
-        public NativeArray<float> distanceBuffer;
+        public NativeLocalArray<float> distances;
         [DeallocateOnJobCompletion]
         [NativeDisableParallelForRestriction]
-        public NativeArray<RVOUtility.Line> lineBuffer;
-        
+        public NativeLocalArray<RVOUtility.Line> lines;
+        [DeallocateOnJobCompletion]
+        [NativeDisableParallelForRestriction]
+        public NativeLocalArray<RVOUtility.Line> projLines;
+
         [ReadOnly] public ComponentDataArray<UnitAgentTypeData> types;
         [ReadOnly] public ComponentDataArray<UnitAgentData> navAgents;
         [DeallocateOnJobCompletion]
@@ -130,23 +131,19 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
         public void Execute(int index)
         {
-            var neighbers = new NativeSlice<int>(neighberBuffer, index * MAX_NEIGHBORS, MAX_NEIGHBORS);
-            var distances = new NativeSlice<float>(distanceBuffer, index * MAX_NEIGHBORS, MAX_NEIGHBORS);
-            var lines = new NativeSlice<RVOUtility.Line>(lineBuffer, index * 2 * MAX_NEIGHBORS, MAX_NEIGHBORS);
-            var projLines = new NativeSlice<RVOUtility.Line>(lineBuffer, (index * 2 + 1) * MAX_NEIGHBORS, MAX_NEIGHBORS);
             int planSize = 0;
             int neighborSize = 0;
             var type = types[index];
             var velocity = navAgents[index].velocity;
-            KdTreeUtility.QueryNeighbors(tree, agents, agentIndicesInverse[index], type.neighborDist * type.neighborDist, neighbers, distances, ref neighborSize);
-            float invTimeHorizon = 1.0f / type.timeHorizon;
+            KdTreeUtility.QueryNeighbors(tree, agents, agentIndicesInverse[index], type.neighborDist * type.neighborDist, neighbors, distances, ref neighborSize);
+            float invTimeHorizon = 1f / type.timeHorizon;
 
             /* Create agent ORCA planes. */
             for (var i = 0; i < neighborSize; ++i)
             {
-                int other = agentIndices[neighbers[i]];
+                int other = agentIndices[neighbors[i]];
 
-                float2 relativePosition = agents[neighbers[i]] - agents[agentIndicesInverse[index]];
+                float2 relativePosition = agents[neighbors[i]] - agents[agentIndicesInverse[index]];
                 float2 relativeVelocity = velocity - navAgents[other].velocity;
                 float distSq = math.lengthSquared(relativePosition);
                 float combinedRadius = type.radius + types[other].radius;
@@ -164,7 +161,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
                     float dotProduct = math.dot(w, relativePosition);
 
-                    if (dotProduct < 0.0f && sqr(dotProduct) > combinedRadiusSq * wLengthSq)
+                    if (dotProduct < 0f && sqr(dotProduct) > combinedRadiusSq * wLengthSq)
                     {
                         /* Project on cut-off circle. */
                         float wLength = math.sqrt(wLengthSq);
@@ -215,8 +212,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
                 lines[i] = line;
             }
             float2 newVelocity;
-            float2 optVelocity = desireVelocity[index];
-            int lineFail = RVOUtility.linearProgram2(lines, neighborSize, type.maxSpeed, ref optVelocity, false, out newVelocity);
+            int lineFail = RVOUtility.linearProgram2(lines, neighborSize, type.maxSpeed, desireVelocity[index], false, out newVelocity);
             
 
             if (lineFail < neighborSize)
@@ -244,19 +240,16 @@ public class UnitPathFollowSystem : JobComponentSystem {
     }
 
     [ComputeJobOptimization]
-    private struct BatchedMove : IJobParallelForBatch
+    private struct BatchedMove : IJobParallelFor
     {
-        [ReadOnly]
-        public NavMeshQuery query;
+        [ReadOnly] public NavMeshQuery query;
 
         public NativeArray<Vector3> steerTargets;
         public NativeArray<NavMeshLocation> prevLocations;
 
-        public void Execute(int startIndex, int count)
+        public void Execute(int index)
         {
-            var locationSlice = new NativeSlice<NavMeshLocation>(prevLocations, startIndex, count);
-            var targetSlice = new NativeSlice<Vector3>(steerTargets, startIndex, count);
-            query.MoveLocationsInSameAreas(locationSlice, targetSlice);
+            prevLocations[index] = query.MoveLocation(prevLocations[index], steerTargets[index]);
         }
     }
 
@@ -315,7 +308,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
     [Inject] ComponentDataFromEntity<Heading> formationHeadings;
     NavMeshQuery query;
 
-    const int MAX_NEIGHBORS = 8;
+    const int MAX_NEIGHBORS = 5;
 
     protected override void OnCreateManager(int capacity)
     {
@@ -330,20 +323,22 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        var positionBuffer = new NativeArray<Vector3>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var locationBuffer = new NativeArray<NavMeshLocation>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var agentBuffer = new NativeArray<float2>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var length = units.Length;
+        var positionBuffer      = new NativeArray<Vector3>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var locationBuffer      = new NativeArray<NavMeshLocation>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var agentBuffer         = new NativeArray<float2>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-        var tree = new NativeArray<KdTreeUtility.TreeNode>(units.Length * 2 - 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var agentIndices = new NativeArray<int>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var agentIndicesInverse = new NativeArray<int>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var tree                = new NativeArray<KdTreeUtility.TreeNode>(length * 2 - 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var agentIndices        = new NativeArray<int>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var agentIndicesInverse = new NativeArray<int>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var newVelocitys        = new NativeArray<float2>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var desireVelocitys     = new NativeArray<float2>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-        var desireVelocitys = new NativeArray<float2>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-        var distanceBuffer = new NativeArray<float>(units.Length * MAX_NEIGHBORS, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var neighborBuffer = new NativeArray<int>(units.Length * MAX_NEIGHBORS, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var lineBuffer = new NativeArray<RVOUtility.Line>(units.Length * MAX_NEIGHBORS * 2, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        var newVelocitys = new NativeArray<float2>(units.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var distanceBuffer      = new NativeLocalArray<float>(MAX_NEIGHBORS, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var neighborBuffer      = new NativeLocalArray<int>(MAX_NEIGHBORS, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var lineBuffer          = new NativeLocalArray<RVOUtility.Line>(MAX_NEIGHBORS, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        var projLineBuffer      = new NativeLocalArray<RVOUtility.Line>(MAX_NEIGHBORS, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        
 
         var initJob = new CopyAgents
         {
@@ -383,9 +378,10 @@ public class UnitPathFollowSystem : JobComponentSystem {
             agentIndicesInverse = agentIndicesInverse,
             agents = agentBuffer,
             desireVelocity = desireVelocitys,
-            distanceBuffer = distanceBuffer,
-            neighberBuffer = neighborBuffer,
-            lineBuffer = lineBuffer,
+            distances = distanceBuffer,
+            neighbors = neighborBuffer,
+            lines = lineBuffer,
+            projLines = projLineBuffer,
             dt = Time.deltaTime,
             newVelocitys = newVelocitys,
             tree = tree,
@@ -421,19 +417,21 @@ public class UnitPathFollowSystem : JobComponentSystem {
         };
 
         //初始化rvo需要的数据
-        var fence = initJob.Schedule(units.Length, SimulationState.TinyBatchSize, inputDeps);
+        var fence = initJob.Schedule(length, SimulationState.TinyBatchSize, inputDeps);
         //构建KdTree
         var buildFence = buildJob.Schedule(fence);
-        //确定期望速度
-        var followFence = followJob.Schedule(units.Length, SimulationState.TinyBatchSize, inputDeps);
+        //根据军队确定期望速度
+        var followFence = followJob.Schedule(length, SimulationState.TinyBatchSize, inputDeps);
         //RVO算规避,确定实际速度
-        fence = rvoJob.Schedule(units.Length, SimulationState.TinyBatchSize, JobHandle.CombineDependencies(buildFence, followFence));
+        fence = rvoJob.Schedule(length, SimulationState.TinyBatchSize, JobHandle.CombineDependencies(buildFence, followFence));
         //根据速度移动
-        fence = applyJob.Schedule(units.Length, SimulationState.TinyBatchSize, fence);
+        fence = applyJob.Schedule(length, SimulationState.TinyBatchSize, fence);
         //将移动的位置限制在寻路网格上
-        fence = moveJob.ScheduleBatch(units.Length, SimulationState.TinyBatchSize, fence);
+        fence = moveJob.Schedule(length, SimulationState.TinyBatchSize, fence);
+        var world = NavMeshWorld.GetDefaultWorld();
+        world.AddDependency(fence);
         //同步在寻路网格上的位置
-        fence = syncJob.Schedule(units.Length, SimulationState.TinyBatchSize, fence);
+        fence = syncJob.Schedule(length, SimulationState.TinyBatchSize, fence);
 
         return fence;
     }

@@ -13,13 +13,14 @@ public class PathFindSystem : JobComponentSystem
     {
         public ComponentDataArray<PathRequestData> requestDatas;
         public FixedArrayArray<PathPoint> paths;
+        public EntityArray entities;
         public int Length;
     }
 
     public struct RequestBatch
     {
         public NavMeshQuery query;
-        public NativeArray<int> entities;
+        public NativeArray<Entity> entities;
         public NativeArray<PathRequestData> requests;
         public NativeArray<int> pathStart;
         public NativeArray<PathPoint> pathBuffer;
@@ -41,7 +42,7 @@ public class PathFindSystem : JobComponentSystem
         {
             var world = NavMeshWorld.GetDefaultWorld();
             query = new NavMeshQuery(world, Allocator.Persistent, nodePoolSize);
-            entities = new NativeArray<int>(MAX_COUNT, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            entities = new NativeArray<Entity>(MAX_COUNT, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             requests = new NativeArray<PathRequestData>(MAX_COUNT, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             pathBuffer = new NativeArray<PathPoint>(MAX_COUNT * MAX_PATHSIZE, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             pathStart = new NativeArray<int>(MAX_COUNT, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
@@ -66,7 +67,7 @@ public class PathFindSystem : JobComponentSystem
             resultBuffer.Dispose();
         }
 
-        public int CopyResult(ref FixedArrayArray<PathPoint> paths, ref ComponentDataArray<PathRequestData> pathRequests)
+        public int CopyResult(ref FixedArrayFromEntity<PathPoint> paths, ref ComponentDataFromEntity<PathRequestData> pathRequests)
         {
             var s = state[0];
             var count = 0;
@@ -74,6 +75,10 @@ public class PathFindSystem : JobComponentSystem
             {
                 var entity = entities[i];
                 var request = requests[i];
+                if(!pathRequests.Exists(entity)) //Entity 已被删除, 丢弃结果
+                {
+                    continue;
+                }
                 var originRequest = pathRequests[entity];
                 if (request.status >= PathRequestStatus.Done)
                     count++;
@@ -85,6 +90,7 @@ public class PathFindSystem : JobComponentSystem
                 {
                     continue; //新的请求, 丢弃结果
                 }
+
                 pathRequests[entity] = request;
                 if(request.status == PathRequestStatus.Done)
                 {
@@ -188,25 +194,15 @@ public class PathFindSystem : JobComponentSystem
         }
     }
 
-    [Inject]
-    Requesters requesters;
-
-    RequestBatch[] batches;
-
-    NativeQueue<int> waitingEntities;
-    
-    NativeCounter counter;
-
-    JobHandle endFence;
-
-    public const int MAX_QUERIES = 10;
 
     [ComputeJobOptimization]
     private struct FetchRequest : IJobParallelFor
     {
-        public NativeQueue<int>.Concurrent waitingEntities;
+        public NativeQueue<Entity>.Concurrent waitingEntities;
         [ReadOnly]
         public ComponentDataArray<PathRequestData> requests;
+        [ReadOnly]
+        public EntityArray entities;
         public NativeCounter.Concurrent counter;
 
         public void Execute(int index)
@@ -214,7 +210,7 @@ public class PathFindSystem : JobComponentSystem
             var request = requests[index];
             if(request.status == PathRequestStatus.NewRequest)
             {
-                waitingEntities.Enqueue(index);
+                waitingEntities.Enqueue(entities[index]);
                 counter.Increment();
             }
         }
@@ -226,8 +222,8 @@ public class PathFindSystem : JobComponentSystem
         public RequestBatch batch;
         public NativeCounter counter;
         public int ID;
-        public NativeQueue<int> waitingEntities;
-        public ComponentDataArray<PathRequestData> requests;
+        public NativeQueue<Entity> waitingEntities;
+        public ComponentDataFromEntity<PathRequestData> requests;
 
         public void Execute()
         {
@@ -239,7 +235,7 @@ public class PathFindSystem : JobComponentSystem
             for (var i = 0; i < perfectSplit; ++i)
             {
                 if (s.entitySize >= RequestBatch.MAX_COUNT - 1) break;
-                int entity;
+                Entity entity;
                 if(!waitingEntities.TryDequeue(out entity)) break;
                 batch.entities[s.entitySize] = entity;
                 var request = requests[entity];
@@ -269,8 +265,8 @@ public class PathFindSystem : JobComponentSystem
     private struct GetResult : IJob
     {
         public RequestBatch batch;
-        public ComponentDataArray<PathRequestData> requests;
-        public FixedArrayArray<PathPoint> paths;
+        public ComponentDataFromEntity<PathRequestData> requests;
+        public FixedArrayFromEntity<PathPoint> paths;
         public NativeCounter counter;
 
         public void Execute()
@@ -290,12 +286,32 @@ public class PathFindSystem : JobComponentSystem
         }
     }
 
+
+    [Inject]
+    Requesters requesters;
+
+    [Inject]
+    ComponentDataFromEntity<PathRequestData> requestDatas;
+
+    [Inject]
+    FixedArrayFromEntity<PathPoint> paths;
+
+    RequestBatch[] batches;
+
+    NativeQueue<Entity> waitingEntities;
+
+    NativeCounter counter;
+
+    JobHandle endFence;
+
+    public const int MAX_QUERIES = 10;
+
     protected override void OnStartRunning()
     {
         batches = new RequestBatch[MAX_QUERIES];
         for (var i = 0; i < MAX_QUERIES; ++i)
             batches[i] = new RequestBatch(2000);
-        waitingEntities = new NativeQueue<int>(Allocator.Persistent);
+        waitingEntities = new NativeQueue<Entity>(Allocator.Persistent);
         counter = new NativeCounter(Allocator.Persistent);
 
         endFence = new JobHandle();
@@ -316,6 +332,7 @@ public class PathFindSystem : JobComponentSystem
         {
             waitingEntities = waitingEntities,
             requests = requesters.requestDatas,
+            entities = requesters.entities,
             counter = counter
         };
         var fetchFence = fetchJob.Schedule(requesters.Length, SimulationState.TinyBatchSize, inputDeps);
@@ -327,7 +344,7 @@ public class PathFindSystem : JobComponentSystem
             {
                 batch = batches[i],
                 waitingEntities = waitingEntities,
-                requests = requesters.requestDatas,
+                requests = requestDatas,
                 counter = counter,
                 ID = i
             };
@@ -347,8 +364,8 @@ public class PathFindSystem : JobComponentSystem
             var getJob = new GetResult
             {
                 batch = batches[i],
-                paths = requesters.paths,
-                requests = requesters.requestDatas,
+                paths = paths,
+                requests = requestDatas,
                 counter = counter
             };
             getFence = getJob.Schedule(getFence);

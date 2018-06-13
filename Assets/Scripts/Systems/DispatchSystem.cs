@@ -137,12 +137,12 @@ class DispatchSystem : ComponentSystem
                 var formationData = EntityManager.GetComponentData<FormationData>(formation);
                 var fortressPosition = EntityManager.GetComponentData<Position>(fortress);
                 var type = EntityManager.GetComponentData<FormationTypeData>(fortress);
-                var troops = Mathf.Min(dispatch.troops, type.unitType.formationWidth, fortressData.troops, type.maxTroops - formationData.troops);
+                var troops = Mathf.Min(dispatch.troops, type.unitType.formationWidth, fortressData.troops, type.unitType.maxTroops - formationData.troops);
                 fortressData.troops -= troops;
                 dispatch.troops -= troops;
                 dispatch.troops = Mathf.Min(fortressData.troops, dispatch.troops);
                 dispatch.remain = dispatch.frequency;
-                if (formationData.troops == type.maxTroops || dispatch.troops == 0) //done
+                if (formationData.troops == type.unitType.maxTroops || dispatch.troops == 0) //done
                 {
                     dispatch.doneDispatch = 1;
                     formationData.state &= ~FormationState.Spawning;

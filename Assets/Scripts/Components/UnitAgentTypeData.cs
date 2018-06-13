@@ -4,6 +4,7 @@ using Unity.Mathematics;
 [System.Serializable]
 public struct UnitAgentTypeData : IComponentData
 {
+    public int maxTroops;
     public int formationWidth;
     public float maxSpeed;
     public float zOffset;
