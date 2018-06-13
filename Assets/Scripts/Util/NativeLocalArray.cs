@@ -50,7 +50,7 @@ unsafe public struct NativeLocalArray<T> : IDisposable
         sizeofT = UnsafeUtility.SizeOf<T>();
         m_Length = length;
         int bytesPerData = length * sizeofT;
-        m_AlignedBytes = (bytesPerData / JobsUtility.CacheLineSize + 1) * bytesPerData;
+        m_AlignedBytes = (bytesPerData / JobsUtility.CacheLineSize + 1) * JobsUtility.CacheLineSize;
         m_Buffer = UnsafeUtility.Malloc(m_AlignedBytes * JobsUtility.MaxJobThreadCount, 4, lable);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS

@@ -8,8 +8,8 @@ using UnityEngine.Experimental.AI;
 using UnityEngine;
 
 
-public class UnitPathFollowSystem : JobComponentSystem {
-
+public class UnitPathFollowSystem : JobComponentSystem
+{ 
     [ComputeJobOptimization]
     private struct CopyAgents : IJobParallelFor
     {
@@ -131,7 +131,6 @@ public class UnitPathFollowSystem : JobComponentSystem {
 
         public void Execute(int index)
         {
-            int planSize = 0;
             int neighborSize = 0;
             var type = types[index];
             var velocity = navAgents[index].velocity;
@@ -224,7 +223,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
     }
 
     [ComputeJobOptimization]
-    private struct ApplyVelocity : IJobParallelFor
+    private struct ApplyNewVelocity : IJobParallelFor
     {
         [DeallocateOnJobCompletion]
         [ReadOnly] public NativeArray<float2> newVelocitys;
@@ -297,6 +296,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
         public ComponentDataArray<InFormationData> inFormations;
         [ReadOnly]
         public ComponentDataArray<UnitAgentTypeData> types;
+        public EntityArray entities;
 
         public int Length;
     }
@@ -355,7 +355,6 @@ public class UnitPathFollowSystem : JobComponentSystem {
             agentIndicesInverse = agentIndicesInverse
         };
 
-
         var followJob = new FollowFormation
         {
             navAgents = units.agents,
@@ -368,10 +367,10 @@ public class UnitPathFollowSystem : JobComponentSystem {
             prevLocations = locationBuffer,
             types = units.types,
             desireVelocitys = desireVelocitys,
-            dt = Time.deltaTime
+            dt = Time.deltaTime,
         };
-
-
+        
+        
         var rvoJob = new RVO
         {
             agentIndices = agentIndices,
@@ -390,7 +389,7 @@ public class UnitPathFollowSystem : JobComponentSystem {
         };
 
        
-        var applyJob = new ApplyVelocity
+        var applyJob = new ApplyNewVelocity
         {
             newVelocitys = newVelocitys,
             positions = units.positions,

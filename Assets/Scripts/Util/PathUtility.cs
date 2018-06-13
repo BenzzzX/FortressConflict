@@ -35,6 +35,15 @@ public enum StraightPathFlags
 
 public class PathUtils
 {
+
+    static public float3 ProjectToSegment(float3 v, float3 w, float3 p)
+    {
+        float l2 = math.lengthSquared(v - w);
+        float t = math.max(0f, math.min(1, math.dot(p - v, w - v) / l2));
+        float3 projection = v + t * (w - v);
+        return projection;
+    }
+
     public static float Perp2D(Vector3 u, Vector3 v)
     {
         return u.z * v.x - u.x * v.z;

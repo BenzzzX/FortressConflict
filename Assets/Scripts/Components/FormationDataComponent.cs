@@ -6,8 +6,9 @@ public enum FormationState
 {
     Spawning = 1,
     Attacking = 2,
-    
+    Deploying = 3
 }
+
 
 [System.Serializable]
 public struct FormationData : IComponentData
@@ -16,11 +17,17 @@ public struct FormationData : IComponentData
 
     public float sideOffset;
 
+    public Entity goal;
+
+    public float3 goalLineL, goalLineR;
+
     [MixedEnum]
     public FormationState state;
 
     public float3 GetUnitAlignTarget(int unitId, Position position, Heading heading, UnitAgentTypeData type)
     {
+        
+
         float3 sideVector = heading.Value.zyx;
         sideVector.x = -sideVector.x;
         var width = type.formationWidth;
@@ -31,7 +38,12 @@ public struct FormationData : IComponentData
         var height = math.select(math.ceil((float)troops / width), math.ceil((float)type.maxTroops / width), (state & FormationState.Spawning) != 0);
         var offset = sideVector * ((unitId % width) - (width * 0.5f)) + side +
                             heading.Value * (height - unitId / width);
-        return position.Value + offset * (radius * 4 + 0.4f);
+        var align = position.Value + offset * (radius * 4 + 0.4f);
+        if (state == FormationState.Deploying)
+        {
+            return PathUtils.ProjectToSegment(goalLineL, goalLineR, align);
+        }
+        return align;
     }
 }
 

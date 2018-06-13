@@ -45,7 +45,7 @@ public class FormationMovementSystem : JobComponentSystem
         {
             var formationData = formationDatas[index];
             var agent = agents[index];
-            if ((formationData.state & FormationState.Attacking) == 0 && agent.state == AgentState.Moving)
+            if (formationData.state != FormationState.Attacking && agent.state == AgentState.Moving)
             {
                 var position = positions[index];
                 var heading = headings[index];
@@ -91,6 +91,22 @@ public class FormationMovementSystem : JobComponentSystem
                 var alpha = distance / math.distance(agent.steerTarget.location.position, agent.fromPoint.location.position);
                 formationData.sideOffset = math.lerp(agent.steerTarget.vertexSide, agent.fromPoint.vertexSide,
                      alpha * alpha);
+
+                var a = formationData.GetUnitAlignTarget(0, position, heading, type.unitType);
+                var end = (formationData.troops / type.unitType.formationWidth + 1) * type.unitType.formationWidth;
+                var b = formationData.GetUnitAlignTarget(end - 1, position, heading, type.unitType);
+                var minX = math.min(a.x, b.x);
+                var maxX = math.max(a.x, b.x);
+                var minY = math.min(a.z, b.z);
+                var maxY = math.max(a.z, b.z);
+
+                var goal = (formationData.goalLineL + formationData.goalLineR) / 2;
+
+
+                if(goal.x > minX && goal.x < maxX && goal.z > minY && goal.z < maxY)
+                {
+                    formationData.state = FormationState.Deploying;
+                }
 
                 positions[index] = position;
                 agents[index] = agent;

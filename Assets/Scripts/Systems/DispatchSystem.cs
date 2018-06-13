@@ -77,21 +77,30 @@ class DispatchSystem : ComponentSystem
             var formation = EntityManager.CreateEntity();
 
             var dispatch = EntityManager.GetComponentData<DispatchData>(fortress);
+            var targetDispatch = EntityManager.GetComponentData<DispatchData>(dispatch.target);
 
             var path = EntityManager.GetFixedArray<PathPoint>(fortress);
             var type = EntityManager.GetComponentData<FormationTypeData>(fortress);
-            var owner = EntityManager.GetComponentData<DispatchData>(fortress);
-            
+            var owner = EntityManager.GetComponentData<OwnerData>(fortress);
+            var request = EntityManager.GetComponentData<PathRequestData>(fortress);
+
 
             var position = new Position { Value = path[0].location.position };
             var dir = new float3(dispatch.offset.x, 0, dispatch.offset.z);
             var heading = new Heading { Value = math_experimental.normalizeSafe(dir) };
-            
+
+
+            var midPos = request.end;
+            var side = math_experimental.normalizeSafe(new float3(-targetDispatch.offset.z, 0, targetDispatch.offset.x));
+            var align = -side * (type.unitType.formationWidth * 0.5f) * (type.unitType.radius*2 + 0.05f);
 
             var formationData = new FormationData
             {
                 troops = 0,
                 sideOffset = 0,
+                goal = dispatch.target,
+                goalLineL = midPos - align,
+                goalLineR = midPos + align,
                 state = FormationState.Spawning
             };
 
@@ -157,7 +166,7 @@ class DispatchSystem : ComponentSystem
                 for (var j=0;j<troops;++j)
                 {
                     var unit = units[j];
-                    var alignPos = side * (j - (type.unitType.formationWidth * 0.5f)) + midPos;
+                    var alignPos = side * (j - (type.unitType.formationWidth * 0.5f)) * (type.unitType.radius*2 + 0.05f) + midPos;
                     var location = query.MapLocation(alignPos, Vector3.one * 10f, agentType);
 
                     var agent = new UnitAgentData
